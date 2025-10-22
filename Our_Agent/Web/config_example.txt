@@ -1,0 +1,18 @@
+# 环境配置说明
+# 请创建 .env 文件并添加以下配置：
+
+API_KEY=your_deepseek_api_key_here
+BASE_URL=https://api.deepseek.com
+MODEL=deepseek-chat
+
+# 说明：
+# 1. API_KEY: 您的DeepSeek API密钥
+# 2. BASE_URL: API服务的基础URL
+# 3. MODEL: 要使用的模型名称
+
+# 如果您使用其他API服务，请相应修改BASE_URL和MODEL
+# 例如OpenAI：
+# API_KEY=your_openai_api_key_here
+# BASE_URL=https://api.openai.com/v1
+# MODEL=gpt-3.5-turbo
+

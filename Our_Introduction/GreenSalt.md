@@ -1,36 +1,41 @@
-# 👋 Hi there, I'm GreenSalt.  
+# 👋 你好，我是 GreenSalt。
 
-## 👨‍💻 About Me
-- 🌱 I’m currently learning **Computer Science**
-- 💡 Interested in **animation and games**
-- 🛠️ Tech stack: **Java,C++,C,MySQL,Python**
-- 📫 How to reach me: **499467652@qq.com**
-- ⚡ Fun fact: **I love pineapple pizza 🍍🍕 (yes, really).**
+## 👨‍💻 关于我
+
+* 🌱 我目前的专业是 **计算机科学与技术**
+* 💡 我对**动画和游戏**很感兴趣
+* 🛠️ 技术栈：**Java, C++, C, MySQL, Python**
+* 📫 联系方式：**[499467652@qq.com](mailto:499467652@qq.com)**
 
 ---
 
-## 🚀 Skills & Tools & Experience
-<!-- 可以添加徽章，比如来自 https://shields.io -->
-- I have learned C and C++, and also some Java, but I'm not very skilled yet.🤧
-- As an exercise, I once tried to create a database management project implemented in Java, which included the basic functions of adding, deleting, modifying and querying. 
-- And in this term, I'm learning how tu use virtural machine and some network programming.
-- Recently, I'm interested in front-end language and how to build a complete project. I'm looking forward to cooperate with my teammate!🤩
+## 🚀 技能 & 工具 & 经历
+
+* 我学过 C 和 C++，也接触过一些 Java，不过目前还不是很熟练🤧
+* 作为练习，我曾尝试过用 Java 实现一个数据库管理项目，包含了增删改查等基本功能。
+* 这学期，我正在学习如何使用虚拟机，以及一些网络编程相关的知识。
+* 最近我对前端语言以及如何构建一个完整的项目很感兴趣，很期待和团队成员们的合作！🤩
+
 ---
 
-## 🥰 Interests
-- In my free time, I like to watch some funny videos or to play some games.
-- I like Infinity Nikki a lot! Here is a photo took in this game.(she is really so cute.🥳)
-- ![2025_09_20_20_46_09_2229255](https://github.com/user-attachments/assets/e77efcfc-945d-458a-8d84-0d25a20c83d7) 
-- I also like Crochet, painting, cooking ...😋
+## 🥰 兴趣爱好
+
+* 空闲的时候，我喜欢看一些有趣的视频，或者玩游戏。
+* 我非常喜欢 **无限暖暖**！这是我在游戏里拍的一张照片。（她真的超级可爱 🥳）
+ ![2025\_09\_20\_20\_46\_09\_2229255](https://github.com/user-attachments/assets/e77efcfc-945d-458a-8d84-0d25a20c83d7)
+* 我还喜欢钩针、绘画、做饭……😋
+* 对软件的兴趣＞对硬件的兴趣
+
 ---
 
+## 👩‍💻 发展计划
 
-## 👩‍💻 Development Plan
-- In the coming three years, I want to sharp my skills in programming.
-- If I have a chance, I'll continue to study for a master's degreee.(Not much interesting for me but it provides more opportunities and choices
-- And if not, I'll find a job about my major.(I'm more looking forward to this.😗 Cuz I want to experience the life I've never had.
+* 未来三年，我希望能够不断提升自己的编程能力。
+* 目前正在努力往保研的方向走，如果可以会继续读研。
+* 如果没有，我可能会去尝试毕业即就业，寻找适合我的专业的工作（其实我更期待这个😗）
+
 ---
 
+⭐️ 来自 [greensaltt](https://github.com/greensaltt)
 
-
-⭐️ From [greensaltt](https://github.com/greensaltt)
+---

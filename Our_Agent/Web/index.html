@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeaTrip - 天气出行智能助手</title>
+  <!-- 引入外部资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  
+  <!-- Tailwind 配置 -->
+  <script>
+    // 去除前缀 JSON 对象的工具（用于清除天气报告结构体）
+    function stripLeadingJsonBlocks(input) {
+      if (!input) return input;
+      let text = input.replace(/^\uFEFF/, '');
+      let i = 0;
+      // 跳过前导空白
+      while (i < text.length && /\s/.test(text[i])) i++;
+      // 连续移除一个或多个顶层 JSON 对象
+      while (i < text.length && text[i] === '{') {
+        let depth = 0;
+        let inString = false;
+        let escaped = false;
+        let j = i;
+        for (; j < text.length; j++) {
+          const ch = text[j];
+          if (inString) {
+            if (escaped) {
+              escaped = false;
+            } else if (ch === '\\') {
+              escaped = true;
+            } else if (ch === '"') {
+              inString = false;
+            }
+            continue;
+          }
+          if (ch === '"') { inString = true; continue; }
+          if (ch === '{') depth++;
+          else if (ch === '}') {
+            depth--;
+            if (depth === 0) { j++; break; }
+          }
+        }
+        text = text.slice(j).replace(/^\s+/, '');
+        // 跳过可能的分隔空行
+        while (text.length && /^(\r?\n)/.test(text)) {
+          text = text.replace(/^(\r?\n)/, '');
+        }
+        // 准备下一轮判断
+        i = 0;
+        while (i < text.length && /\s/.test(text[i])) i++;
+        if (text[i] !== '{') break;
+      }
+      return text;
+    }
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#09AF73',
+            secondary: '#078A5B',
+            neutral: '#F5F7FA',
+            dark: '#1D2129',
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <!-- 自定义样式 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .agent-bounce {
+        animation: bounce 2s infinite;
+      }
+      .message-appear {
+        animation: fadeIn 0.5s ease-out;
+      }
+      .agent-shrink {
+        animation: shrink 0.5s ease-out forwards;
+      }
+      .agent-expand {
+        animation: expand 0.5s ease-out forwards;
+      }
+      .sidebar-slide-in {
+        animation: slideIn 0.3s ease-out forwards;
+      }
+      .sidebar-slide-out {
+        animation: slideOut 0.3s ease-out forwards;
+      }
+      .recording-pulse {
+        animation: pulse 1.5s infinite;
+      }
+      .input-safe-area {
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+      }
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shrink {
+      from { 
+        width: 160px; 
+        height: 160px; 
+        margin: 1rem auto;
+      }
+      to { 
+        width: 40px; 
+        height: 40px; 
+        margin: 0;
+      }
+    }
+
+    @keyframes expand {
+      from { 
+        width: 40px; 
+        height: 40px; 
+        margin: 0;
+      }
+      to { 
+        width: 160px; 
+        height: 160px; 
+        margin: 1rem auto;
+      }
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(0); }
+    }
+
+    @keyframes slideOut {
+      from { transform: translateX(0); }
+      to { transform: translateX(-100%); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(9, 175, 115, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(9, 175, 115, 0); }
+    }
+
+    /* 基础布局优化 - 确保历史栏不遮挡内容 */
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    /* 历史对话栏 - 绝对定位不影响主内容流 */
+    #history-sidebar {
+      height: 100vh !important;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      position: fixed !important;
+      z-index: 40; /* 降低层级避免遮挡顶部栏 */
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    #chat-history-list {
+      flex-grow: 1;
+      overflow-y: auto;
+      height: auto !important;
+      min-height: 0;
+    }
+
+    /* 主内容区域 - 侧边栏打开时添加左内边距避免遮挡 */
+    .main-content-wrapper {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: padding-left 0.3s ease; /* 改用内边距而非外边距 */
+    }
+
+    #chat-container {
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    /* 顶部栏 - 固定定位确保在最上层 */
+    #top-agent {
+      position: sticky;
+      top: 0;
+      z-index: 50; /* 高于历史栏确保不被遮挡 */
+    }
+
+    /* 修复手机端文件上传点击区域 */
+    .file-upload-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+    }
+
+    /* 输入框自适应文本高度 */
+    #user-input {
+      resize: none;
+      min-height: 40px;
+      max-height: 120px;
+      transition: height 0.2s ease;
+    }
+
+    /* 左上角统一布局 - 从左到右排列 */
+    .header-left-group {
+      display: flex;
+      align-items: center;
+      gap: 12px; /* 统一间距 */
+    }
+
+    .history-btn-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+    }
+
+    .agent-info-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+  <!-- Markdown 解析器（用于直接渲染模型返回的 Markdown 文本） -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+</head>
+<body class="font-inter bg-neutral">
+  <div class="flex h-full">
+    <!-- 历史对话栏 - 固定定位不遮挡主内容 -->
+    <div id="history-sidebar" class="w-72 bg-white transform -translate-x-full lg:translate-x-0 transition-transform duration-300 flex flex-col">
+      <div class="p-3 border-b">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base font-bold text-primary">历史对话</h2>
+          <button id="close-sidebar" class="lg:hidden text-gray-500 hover:text-primary p-1">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+        <div class="mt-2 relative">
+          <input type="text" id="chat-search" placeholder="搜索对话..." class="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary">
+          <i class="fa fa-search absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+        </div>
+      </div>
+      <div id="chat-history-list" class="p-2 overflow-y-auto">
+        <div class="text-center text-gray-500 py-6 text-sm">暂无历史对话</div>
+      </div>
+    </div>
+    
+    <!-- 主内容区域 - 用内边距适配侧边栏 -->
+    <div id="main-content" class="flex-grow main-content-wrapper">
+      <!-- 顶部栏 - 左上角从左到右：历史图标 → 智能体头像 → 智能体名称 -->
+      <header id="top-agent" class="flex items-center justify-between py-3 px-4 mb-1 opacity-0 transition-opacity duration-500 bg-white shadow-sm">
+        <!-- 左上角统一分组：历史图标 + 智能体信息 -->
+        <div class="header-left-group">
+          <!-- 历史对话图标（所有设备统一位置） -->
+          <button id="universal-history-btn" class="history-btn-item text-primary hover:text-secondary transition-colors">
+            <i class="fa fa-bars text-lg"></i>
+          </button>
+          
+          <!-- 智能体信息组：头像 + 名称 -->
+          <div class="agent-info-group">
+            <div id="top-agent-avatar" class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+              <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/804e8a4127f34cad92b24ffbd40056dc~tplv-a9rns2rl98-image.image?rcl=202510192247378014FF1462F83C4B7AD1&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1763477273&x-signature=ebjw2sr3OQgTJf0gBM%2BTlGCetmI%3D" alt="WeaTrip 智能体" class="w-full h-full object-cover">
+            </div>
+            <h1 id="agent-name" class="text-base font-bold text-primary cursor-pointer hover:text-secondary transition-colors">
+              WeaTrip <i class="fa fa-info-circle ml-0.5 text-xs"></i>
+            </h1>
+          </div>
+        </div>
+        
+        <!-- 右侧留白（保持布局平衡） -->
+        <div class="w-12"></div>
+      </header>
+      
+      <!-- 分隔线 -->
+      <div id="header-divider" class="w-full h-px bg-gray-200 mx-4 hidden"></div>
+
+      <!-- 主内容滚动区域 -->
+      <main class="flex-grow overflow-hidden flex flex-col px-4 py-1">
+        <!-- 智能体介绍模态框 -->
+        <div id="agent-modal" class="fixed inset-0 bg-dark/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-xl p-6 max-w-md w-[90%] shadow-2xl">
+            <div class="text-center mb-4">
+              <div class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto overflow-hidden">
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/804e8a4127f34cad92b24ffbd40056dc~tplv-a9rns2rl98-image.image?rcl=202510192247378014FF1462F83C4B7AD1&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1763477273&x-signature=ebjw2sr3OQgTJf0gBM%2BTlGCetmI%3D" alt="WeaTrip 智能体" class="w-full h-full object-cover">
+              </div>
+              <h2 class="mt-3 text-xl font-bold text-primary">WeaTrip</h2>
+              <p class="text-gray-500 mt-0.5 text-sm">天气出行智能助手</p>
+            </div>
+            <div class="text-gray-600 space-y-1.5 text-sm">
+              <p>• 基于实时天气数据生成个性化出行计划</p>
+              <p>• 支持全球任意城市的天气查询与出行建议</p>
+              <p>• 提供穿衣、交通、活动推荐等全方位指导</p>
+              <p>• 可保存和管理历史出行计划，支持语音输入</p>
+            </div>
+            <button id="close-modal" class="mt-6 w-full bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition-colors text-sm">
+              关闭
+            </button>
+          </div>
+        </div>
+
+        <!-- 初始状态（新对话） -->
+        <div id="initial-agent" class="flex-grow flex flex-col items-center justify-center px-4">
+          <!-- 初始状态左上角：同样从左到右排列 -->
+          <div class="header-left-group absolute top-4 left-4 z-10">
+            <button id="initial-history-btn" class="history-btn-item text-primary hover:text-secondary">
+              <i class="fa fa-bars text-lg"></i>
+            </button>
+            <div class="agent-info-group">
+              <h2 id="initial-agent-name" class="text-base font-bold text-primary cursor-pointer hover:text-secondary transition-colors">
+                WeaTrip <i class="fa fa-info-circle ml-0.5 text-xs"></i>
+              </h2>
+            </div>
+          </div>
+          
+          <!-- 智能体头像 -->
+          <div id="main-agent-avatar" class="w-40 h-40 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden agent-bounce">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/804e8a4127f34cad92b24ffbd40056dc~tplv-a9rns2rl98-image.image?rcl=202510192247378014FF1462F83C4B7AD1&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1763477273&x-signature=ebjw2sr3OQgTJf0gBM%2BTlGCetmI%3D" alt="WeaTrip 智能体" class="w-full h-full object-cover">
+          </div>
+          
+          <!-- 提示文本 -->
+          <p class="mt-4 text-gray-500 text-center max-w-sm text-sm">
+            请输入目的地，我将根据当地天气为你生成专属出行计划<br>
+            <span class="text-xs text-gray-400 mt-1 block">支持文字或语音输入</span>
+          </p>
+        </div>
+
+        <!-- 对话区域 -->
+        <div id="chat-container" class="flex-grow overflow-y-auto mb-2 hidden">
+          <div id="chat-history" class="space-y-3 pb-2">
+            <!-- 对话内容动态生成 -->
+          </div>
+        </div>
+      </main>
+
+      <!-- 对话工具栏 -->
+      <div id="chat-tools" class="flex justify-between items-center px-4 py-2 mb-1 hidden">
+        <div class="flex items-center space-x-2">
+          <button id="new-chat" class="flex items-center text-primary hover:text-secondary transition-colors text-sm">
+            <i class="fa fa-plus-circle mr-1"></i> 新对话
+          </button>
+          <div class="flex items-center flex-1 max-w-[200px]">
+            <input type="text" id="chat-title" placeholder="修改对话名..." class="w-full px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-primary">
+            <button id="save-title" class="ml-1 text-primary hover:text-secondary transition-colors p-1">
+              <i class="fa fa-save text-xs"></i>
+            </button>
+          </div>
+        </div>
+        <div>
+          <span id="current-chat-name" class="text-xs text-gray-500">当前对话：未命名</span>
+        </div>
+      </div>
+
+      <!-- 底部输入区域 -->
+      <div class="bg-white rounded-xl shadow-lg p-3 mx-4 mb-2 input-safe-area">
+        <div class="flex overflow-x-auto pb-2 mb-2 gap-2 hide-scrollbar">
+          <button class="whitespace-nowrap px-3 py-1 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/20 transition-colors flex-shrink-0" onclick="setSampleInput('给我列出一份北京出行计划')">
+            北京出行计划
+          </button>
+          <button class="whitespace-nowrap px-3 py-1 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/20 transition-colors flex-shrink-0" onclick="setSampleInput('上海未来3天的出行建议')">
+            上海3天出行
+          </button>
+          <button class="whitespace-nowrap px-3 py-1 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/20 transition-colors flex-shrink-0" onclick="setSampleInput('广州今日适合户外活动吗')">
+            广州户外活动建议
+          </button>
+          <button class="whitespace-nowrap px-3 py-1 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/20 transition-colors flex-shrink-0" onclick="setSampleInput('深圳周末亲子出行计划')">
+            深圳亲子出行
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-1.5">
+          <label class="file-upload-label cursor-pointer text-primary hover:text-secondary transition-colors relative group">
+            <i class="fa fa-paperclip text-lg"></i>
+            <input type="file" id="file-upload" class="hidden" accept="image/*,.pdf,.doc,.docx,.txt,.xlsx">
+            <span class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-dark text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+              上传文件
+            </span>
+          </label>
+          
+          <button id="voice-input-btn" class="w-10 h-10 flex items-center justify-center text-primary hover:text-secondary transition-colors relative group">
+            <i class="fa fa-microphone text-lg"></i>
+            <span class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-dark text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+              语音输入
+            </span>
+          </button>
+          
+          <div id="voice-status" class="hidden items-center text-primary text-xs mr-1">
+            <i class="fa fa-microphone-slash recording-pulse mr-0.5"></i>
+            <span>录音中</span>
+          </div>
+          
+          <textarea id="user-input" class="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-sm" 
+                    placeholder="输入目的地或需求..."></textarea>
+          
+          <button id="send-btn" class="w-10 h-10 bg-primary text-white flex items-center justify-center rounded-lg hover:bg-primary/90 transition-colors">
+            <i class="fa fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 全局变量
+    let currentChatId = 'chat-1';
+    let chatTitles = {};
+    let isFirstMessage = true;
+    let chatMessages = {};
+    let recognition;
+    let isRecording = false;
+    
+    // DOM 元素
+    const historySidebar = document.getElementById('history-sidebar');
+    const universalHistoryBtn = document.getElementById('universal-history-btn'); // 统一历史按钮
+    const initialHistoryBtn = document.getElementById('initial-history-btn');
+    const closeSidebarBtn = document.getElementById('close-sidebar');
+    const chatHistoryList = document.getElementById('chat-history-list');
+    const chatSearch = document.getElementById('chat-search');
+    const voiceInputBtn = document.getElementById('voice-input-btn');
+    const voiceStatus = document.getElementById('voice-status');
+    const initialAgentName = document.getElementById('initial-agent-name');
+    const initialAgent = document.getElementById('initial-agent');
+    const chatContainer = document.getElementById('chat-container');
+    const chatHistory = document.getElementById('chat-history');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const topAgent = document.getElementById('top-agent');
+    const mainAgentAvatar = document.getElementById('main-agent-avatar');
+    const agentName = document.getElementById('agent-name');
+    const agentModal = document.getElementById('agent-modal');
+    const closeModal = document.getElementById('close-modal');
+    const chatTools = document.getElementById('chat-tools');
+    const newChatBtn = document.getElementById('new-chat');
+    const chatTitleInput = document.getElementById('chat-title');
+    const saveTitleBtn = document.getElementById('save-title');
+    const currentChatName = document.getElementById('current-chat-name');
+    const fileUpload = document.getElementById('file-upload');
+    const mainContent = document.getElementById('main-content');
+
+    // 初始化语音识别
+    function initVoiceRecognition() {
+      if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'zh-CN';
+        recognition.maxAlternatives = 1;
+        
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          userInput.value = transcript;
+          userInput.focus();
+          adjustTextareaHeight();
+        };
+        
+        recognition.onend = () => {
+          if (isRecording) {
+            recognition.start();
+          } else {
+            voiceStatus.classList.add('hidden');
+            voiceStatus.classList.remove('flex');
+            voiceInputBtn.innerHTML = '<i class="fa fa-microphone text-lg"></i>';
+          }
+        };
+        
+        recognition.onerror = (event) => {
+          console.error('语音识别错误:', event.error);
+          stopVoiceRecording();
+          alert('语音识别失败，请重试或检查麦克风权限');
+        };
+      } else {
+        voiceInputBtn.disabled = true;
+        voiceInputBtn.title = '您的浏览器不支持语音输入';
+        voiceInputBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    // 语音录音控制
+    function toggleVoiceRecording() {
+      if (!recognition) return;
+      
+      if (isRecording) {
+        stopVoiceRecording();
+      } else {
+        startVoiceRecording();
+      }
+    }
+
+    function startVoiceRecording() {
+      isRecording = true;
+      voiceStatus.classList.remove('hidden');
+      voiceStatus.classList.add('flex');
+      voiceInputBtn.innerHTML = '<i class="fa fa-stop text-lg"></i>';
+      
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error('开始录音失败:', error);
+        stopVoiceRecording();
+        alert('无法启动录音，请检查麦克风权限');
+      }
+    }
+
+    function stopVoiceRecording() {
+      isRecording = false;
+      voiceStatus.classList.add('hidden');
+      voiceStatus.classList.remove('flex');
+      voiceInputBtn.innerHTML = '<i class="fa fa-microphone text-lg"></i>';
+      
+      if (recognition?.state === 'running') {
+        recognition.stop();
+      }
+    }
+
+    // 设置示例输入
+    function setSampleInput(text) {
+      userInput.value = text;
+      userInput.focus();
+      adjustTextareaHeight();
+    }
+
+    // 调整文本框高度
+    function adjustTextareaHeight() {
+      userInput.style.height = 'auto';
+      userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+    }
+    
+    // 切换侧边栏 - 主内容用内边距适配避免遮挡
+    function toggleSidebar() {
+      const isSidebarOpen = !historySidebar.classList.contains('-translate-x-full');
+      
+      if (isSidebarOpen) {
+        // 关闭侧边栏
+        historySidebar.classList.add('-translate-x-full');
+        historySidebar.classList.remove('sidebar-slide-in');
+        historySidebar.classList.add('sidebar-slide-out');
+        // 移除主内容内边距
+        mainContent.style.paddingLeft = '0';
+      } else {
+        // 打开侧边栏
+        historySidebar.classList.remove('-translate-x-full', 'sidebar-slide-out');
+        historySidebar.classList.add('sidebar-slide-in');
+        // 添加内边距（等于侧边栏宽度）
+        mainContent.style.paddingLeft = '18rem'; // w-72 = 18rem
+      }
+    }
+    
+    // 初始化对话数据
+    function initChatData() {
+      const savedChatTitles = localStorage.getItem('chatTitles');
+      const savedChatMessages = localStorage.getItem('chatMessages');
+      
+      if (savedChatTitles) {
+        chatTitles = JSON.parse(savedChatTitles);
+      }
+      
+      if (savedChatMessages) {
+        chatMessages = JSON.parse(savedChatMessages);
+      }
+      
+      if (Object.keys(chatTitles).length === 0) {
+        createNewChat();
+      } else {
+        const chatIds = Object.keys(chatTitles);
+        currentChatId = chatIds[chatIds.length - 1];
+        loadChat(currentChatId);
+        
+        if (!isFirstMessage) {
+          initialAgent.classList.add('hidden');
+          chatContainer.classList.remove('hidden');
+          chatTools.classList.remove('hidden');
+          topAgent.classList.remove('opacity-0');
+          document.getElementById('header-divider').classList.remove('hidden');
+        }
+      }
+      
+      updateChatHistoryList();
+    }
+    
+    // 保存对话数据
+    function saveChatData() {
+      localStorage.setItem('chatTitles', JSON.stringify(chatTitles));
+      localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+      updateChatHistoryList();
+    }
+    
+    // 搜索历史对话
+    function searchChats(query) {
+      if (!query.trim()) {
+        updateChatHistoryList();
+        return;
+      }
+      
+      query = query.toLowerCase();
+      const filteredChatIds = Object.keys(chatTitles).filter(chatId => {
+        const title = chatTitles[chatId].toLowerCase();
+        const messages = chatMessages[chatId] || [];
+        
+        if (title.includes(query)) return true;
+        
+        for (const message of messages) {
+          if (message.content.toLowerCase().includes(query)) return true;
+        }
+        
+        return false;
+      });
+      
+      chatHistoryList.innerHTML = '';
+      
+      if (filteredChatIds.length === 0) {
+        chatHistoryList.innerHTML = '<div class="text-center text-gray-500 py-6 text-sm">没有找到匹配的对话</div>';
+        return;
+      }
+      
+      const sortedChatIds = filteredChatIds.sort((a, b) => {
+        const timeA = parseInt(a.replace('chat-', ''));
+        const timeB = parseInt(b.replace('chat-', ''));
+        return timeB - timeA;
+      });
+      
+      sortedChatIds.forEach(chatId => {
+        renderChatItem(chatId);
+      });
+    }
+    
+    // 渲染对话项
+    function renderChatItem(chatId) {
+      const chatItem = document.createElement('div');
+      chatItem.className = 'p-2.5 border-b hover:bg-neutral rounded cursor-pointer transition-colors text-sm';
+      
+      if (chatId === currentChatId) {
+        chatItem.classList.add('bg-primary/5');
+      }
+      
+      const chatTitle = chatTitles[chatId] || '未命名';
+      const messages = chatMessages[chatId] || [];
+      
+      let lastMessageTime = '';
+      if (messages.length > 0) {
+        const lastMessage = messages[messages.length - 1];
+        const date = new Date(parseInt(lastMessage.timestamp));
+        lastMessageTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      }
+      
+      let lastMessagePreview = '';
+      if (messages.length > 0) {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.isUser) {
+          lastMessagePreview = '你: ' + (lastMessage.content.length > 18 ? lastMessage.content.substring(0, 18) + '...' : lastMessage.content);
+        } else {
+          lastMessagePreview = 'WeaTrip: 已生成出行计划';
+        }
+      }
+      
+      chatItem.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div class="font-medium">${chatTitle}</div>
+          <div class="text-xs text-gray-500">${lastMessageTime}</div>
+        </div>
+        <div class="text-xs text-gray-600 mt-1 line-clamp-1">${lastMessagePreview}</div>
+        <div class="flex justify-end mt-1">
+          <button class="delete-chat text-gray-400 hover:text-red-500 transition-colors p-0.5" data-chat-id="${chatId}">
+            <i class="fa fa-trash text-xs"></i>
+          </button>
+        </div>
+      `;
+      
+      chatItem.addEventListener('click', (e) => {
+        if (!e.target.closest('.delete-chat')) {
+          loadChat(chatId);
+          
+          // 移动端自动关闭侧边栏
+          if (window.innerWidth < 1024) {
+            toggleSidebar();
+          }
+        }
+      });
+      
+      chatHistoryList.appendChild(chatItem);
+      
+      const deleteBtn = chatItem.querySelector('.delete-chat');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteChat(deleteBtn.getAttribute('data-chat-id'));
+        });
+      }
+    }
+    
+    // 更新对话列表
+    function updateChatHistoryList() {
+      chatHistoryList.innerHTML = '';
+      
+      if (Object.keys(chatTitles).length === 0) {
+        chatHistoryList.innerHTML = '<div class="text-center text-gray-500 py-6 text-sm">暂无历史对话</div>';
+        return;
+      }
+      
+      const sortedChatIds = Object.keys(chatTitles).sort((a, b) => {
+        const timeA = parseInt(a.replace('chat-', ''));
+        const timeB = parseInt(b.replace('chat-', ''));
+        return timeB - timeA;
+      });
+      
+      sortedChatIds.forEach(chatId => {
+        renderChatItem(chatId);
+      });
+    }
+    
+    // 加载对话
+    function loadChat(chatId) {
+      currentChatId = chatId;
+      currentChatName.textContent = `当前对话：${chatTitles[chatId] || '未命名'}`;
+      chatTitleInput.value = chatTitles[chatId] || '';
+      
+      chatHistory.innerHTML = '';
+      
+      const messages = chatMessages[chatId] || [];
+      messages.forEach(message => {
+        addMessage(message.content, message.isUser, false);
+      });
+      
+      if (messages.length > 0 && isFirstMessage) {
+        initialAgent.classList.add('hidden');
+        chatContainer.classList.remove('hidden');
+        chatTools.classList.remove('hidden');
+        topAgent.classList.remove('opacity-0');
+        document.getElementById('header-divider').classList.remove('hidden');
+        mainAgentAvatar.classList.add('agent-shrink');
+        isFirstMessage = false;
+      }
+      
+      updateChatHistoryList();
+    }
+    
+    // 删除对话
+    function deleteChat(chatId) {
+      if (confirm('确定要删除这个对话吗？')) {
+        delete chatTitles[chatId];
+        delete chatMessages[chatId];
+        saveChatData();
+        
+        if (chatId === currentChatId) {
+          const remainingChatIds = Object.keys(chatTitles);
+          if (remainingChatIds.length > 0) {
+            loadChat(remainingChatIds[0]);
+          } else {
+            createNewChat();
+          }
+        }
+      }
+    }
+
+    async function mcp_client(prompt) {
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: prompt }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP错误: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || "服务器返回错误");
+    }
+    
+    return data.reply;
+  } catch (err) {
+    console.error("MCP 请求失败:", err);
+    return `❌ 出行计划生成失败：${err.message}。请检查服务器是否正常运行。`;
+  }
+}
+
+    // 生成出行计划（已弃用）
+    function generateTravelPlan() { return ''; }
+
+    // 提取温馨提示（已弃用）
+    function extractTipsBlocks() { return []; }
+
+    // 将 MCP 纯文本天气结果转换为组件卡片
+    function formatMcpReplyToPlan(text) { return text; }
+
+    // 添加消息
+    function addMessage(content, isUser = false, skipSave = false) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'} message-appear`;
+      
+      const messageContent = document.createElement('div');
+      messageContent.className = `max-w-[85%] px-10 py-2 rounded-lg ${isUser ? 'bg-[#09AF73] text-white' : 'bg-[#EFEFEF] text-black'}`;
+      messageContent.style.lineHeight = '20px';
+      messageContent.style.letterSpacing = '0.8px';
+      messageContent.style.fontSize = '14px';
+      
+      messageContent.innerHTML = content;
+      
+      if (!isUser) {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'mt-2 inline-flex items-center px-2.5 py-1 rounded-md border border-primary text-primary hover:bg-primary/10 transition-colors text-xs';
+        copyBtn.innerHTML = '<i class="fa fa-copy mr-1"></i> 复制计划';
+        copyBtn.onclick = () => {
+          const text = messageContent.innerText;
+          navigator.clipboard.writeText(text).then(() => {
+            copyBtn.innerHTML = '<i class="fa fa-check mr-1"></i> 已复制';
+            setTimeout(() => {
+              copyBtn.innerHTML = '<i class="fa fa-copy mr-1"></i> 复制计划';
+            }, 2000);
+          });
+        };
+        messageContent.appendChild(copyBtn);
+      }
+      
+      messageDiv.appendChild(messageContent);
+      chatHistory.appendChild(messageDiv);
+      
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      
+      if (!skipSave) {
+        if (!chatMessages[currentChatId]) {
+          chatMessages[currentChatId] = [];
+        }
+        
+        chatMessages[currentChatId].push({
+          content: content,
+          isUser: isUser,
+          timestamp: Date.now().toString()
+        });
+        
+        if (isUser && chatMessages[currentChatId].length === 1) {
+          chatTitles[currentChatId] = content.length > 18 ? content.substring(0, 18) + '...' : content;
+          currentChatName.textContent = `当前对话：${chatTitles[currentChatId]}`;
+          chatTitleInput.value = chatTitles[currentChatId];
+        }
+        
+        saveChatData();
+      }
+    }
+
+    // 发送消息
+    function sendMessage() {
+      const inputText = userInput.value.trim();
+      if (!inputText) return;
+
+      if (isRecording) {
+        stopVoiceRecording();
+      }
+
+      if (isFirstMessage) {
+        initialAgent.classList.add('hidden');
+        chatContainer.classList.remove('hidden');
+        chatTools.classList.remove('hidden');
+        topAgent.classList.remove('opacity-0');
+        document.getElementById('header-divider').classList.remove('hidden');
+        mainAgentAvatar.classList.add('agent-shrink');
+        isFirstMessage = false;
+      }
+
+      addMessage(inputText, true);
+      userInput.value = '';
+      adjustTextareaHeight();
+
+      const thinkingDiv = document.createElement('div');
+      thinkingDiv.className = 'flex justify-start message-appear';
+      thinkingDiv.innerHTML = `
+        <div class="max-w-[85%] p-3 rounded-lg bg-white text-dark shadow-sm text-sm">
+          <div class="flex space-x-1">
+            <div class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style="animation-delay: 0ms"></div>
+            <div class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style="animation-delay: 150ms"></div>
+            <div class="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style="animation-delay: 300ms"></div>
+          </div>
+        </div>
+      `;
+      chatHistory.appendChild(thinkingDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      (async () => {
+        const plan = await mcp_client(inputText);
+        chatHistory.removeChild(thinkingDiv);
+        // 仅渲染最终回答：去除“调用工具”相关日志行
+        const raw = typeof plan === 'string' ? plan : String(plan ?? '');
+        // 先精准裁掉开头的 JSON 块
+        let cleaned = stripLeadingJsonBlocks(raw)
+          // 兜底：若仍在开头出现 weather_prompt 相关 JSON，用正则整体移除
+          .replace(/^\s*\{[\s\S]*?"prompt_template"\s*:\s*"weather_prompt"[\s\S]*?\}\s*(\r?\n)*/i, '')
+          // 去除以“调用工具:”开头的段落
+          .replace(/(^|\n)调用工具:[\s\S]*?(?=\n\S|$)/g, '\n')
+          // 去除天气报告 JSON 结构（任何代码块形式，不限语言标注）
+          .replace(/```[a-zA-Z0-9_-]*[\s\S]*?("weather_prompt"|"raw_data"|"template_args")[\s\S]*?```/gi, '')
+          // 去除天气报告 JSON 结构（大括号对象，包含关键字段任一组合）
+          .replace(/\{[\s\S]*?("prompt_template"[\s\S]*?"weather_prompt"|"raw_data"[\s\S]*?"template_args")[\s\S]*?\}/g, '')
+          .replace(/\n{3,}/g, '\n\n')                              // 压缩多余空行
+          .trim();
+        // 再次保险：若仍以 JSON 对象开头，按括号配对精确裁切
+        cleaned = stripLeadingJsonBlocks(cleaned);
+        const md = window.markdownit({ html: false, linkify: true, breaks: true });
+        const formatted = md.render(cleaned);
+        const card = `<div class="bg-white p-3 rounded-xl shadow-sm text-sm">${formatted}</div>`;
+        addMessage(card);
+      })();
+
+    }
+
+    // 创建新对话
+    function createNewChat() {
+      if (isRecording) {
+        stopVoiceRecording();
+      }
+      
+      const newChatId = `chat-${Date.now()}`;
+      currentChatId = newChatId;
+      chatTitles[newChatId] = '未命名';
+      chatMessages[newChatId] = [];
+      
+      currentChatName.textContent = `当前对话：${chatTitles[newChatId]}`;
+      chatTitleInput.value = '';
+      
+      chatHistory.innerHTML = '';
+      
+      initialAgent.classList.remove('hidden');
+      chatContainer.classList.add('hidden');
+      chatTools.classList.add('hidden');
+      topAgent.classList.add('opacity-0');
+      document.getElementById('header-divider').classList.add('hidden');
+      mainAgentAvatar.classList.remove('agent-shrink');
+      mainAgentAvatar.classList.add('agent-bounce');
+      isFirstMessage = true;
+      
+      // 重置主内容内边距
+      mainContent.style.paddingLeft = '0';
+      // 确保侧边栏关闭
+      historySidebar.classList.add('-translate-x-full');
+      
+      saveChatData();
+      
+      userInput.focus();
+      adjustTextareaHeight();
+    }
+
+    // 保存对话名称
+    function saveChatTitle() {
+      const newTitle = chatTitleInput.value.trim();
+      if (newTitle) {
+        chatTitles[currentChatId] = newTitle;
+        currentChatName.textContent = `当前对话：${newTitle}`;
+        chatTitleInput.value = '';
+        saveChatData();
+      }
+    }
+
+    // 处理文件上传
+    function handleFileUpload(file) {
+      if (!file) return;
+      
+      const fileSize = (file.size / 1024 / 1024).toFixed(2);
+      let fileInfo = `<strong>${file.name}</strong> (${fileSize}MB)`;
+      
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (file.size <= 5 * 1024 * 1024) {
+            addMessage(`<p>上传了图片：${fileInfo}</p><img src="${e.target.result}" class="mt-2 max-w-[180px] rounded-md" alt="${file.name}">`, true);
+          } else {
+            addMessage(`<p>上传了图片：${fileInfo}</p><p class="text-xs text-yellow-500">图片大小超过5MB，无法预览</p>`, true);
+            setTimeout(() => {
+              addMessage(`已收到你上传的图片 "${file.name}"。图片大小超过5MB限制，无法在历史记录中保存预览。`);
+            }, 1000);
+          }
+        };
+        reader.readAsDataURL(file);
+      } else {
+        addMessage(`<p>上传了文件：${fileInfo}</p><p class="text-xs text-gray-400 mt-1">文件类型：${file.type}</p>`, true);
+        setTimeout(() => {
+          addMessage(`已收到你上传的文件 "${file.name}"。如需基于文件内容生成出行计划，请补充说明你的具体需求。`);
+        }, 1000);
+      }
+    }
+
+    // 事件监听
+    sendBtn.addEventListener('click', sendMessage);
+    
+    userInput.addEventListener('input', adjustTextareaHeight);
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    
+    // 智能体简介
+    agentName.addEventListener('click', () => {
+      agentModal.classList.remove('hidden');
+    });
+    
+    initialAgentName.addEventListener('click', () => {
+      agentModal.classList.remove('hidden');
+    });
+    
+    closeModal.addEventListener('click', () => {
+      agentModal.classList.add('hidden');
+    });
+    
+    agentModal.addEventListener('click', (e) => {
+      if (e.target === agentModal) {
+        agentModal.classList.add('hidden');
+      }
+    });
+    
+    // 新对话
+    newChatBtn.addEventListener('click', createNewChat);
+    
+    // 保存对话名称
+    saveTitleBtn.addEventListener('click', saveChatTitle);
+    
+    chatTitleInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveChatTitle();
+      }
+    });
+    
+    // 文件上传
+    fileUpload.addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        handleFileUpload(e.target.files[0]);
+        e.target.value = '';
+      }
+    });
+    
+    // 所有历史按钮绑定同一事件
+    universalHistoryBtn.addEventListener('click', toggleSidebar);
+    initialHistoryBtn.addEventListener('click', toggleSidebar);
+    closeSidebarBtn.addEventListener('click', toggleSidebar);
+    
+    // 语音输入
+    voiceInputBtn.addEventListener('click', toggleVoiceRecording);
+    
+    // 搜索对话
+    chatSearch.addEventListener('input', (e) => {
+      searchChats(e.target.value);
+    });
+    
+    // 窗口大小变化适配
+    window.addEventListener('resize', () => {
+      adjustTextareaHeight();
+      
+      if (window.innerWidth >= 1024) {
+        // 电脑端默认显示侧边栏并添加内边距
+        if (!historySidebar.classList.contains('-translate-x-full')) {
+          mainContent.style.paddingLeft = '18rem';
+          historySidebar.classList.remove('-translate-x-full', 'sidebar-slide-out');
+          historySidebar.classList.add('sidebar-slide-in');
+        } else {
+          mainContent.style.paddingLeft = '0';
+        }
+      } else {
+        // 手机端默认隐藏侧边栏
+        if (!isFirstMessage) {
+          historySidebar.classList.add('-translate-x-full', 'sidebar-slide-out');
+          historySidebar.classList.remove('sidebar-slide-in');
+          mainContent.style.paddingLeft = '0';
+        }
+      }
+    });
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      initVoiceRecognition();
+      initChatData();
+      adjustTextareaHeight();
+      window.dispatchEvent(new Event('resize'));
+      
+      // 修复手机端滚动问题
+      document.body.addEventListener('touchmove', (e) => {
+        if (e.target === chatContainer || chatContainer.contains(e.target)) {
+          return;
+        }
+        e.preventDefault();
+      }, { passive: false });
+    });
+  </script>
+</body>
+</html>
