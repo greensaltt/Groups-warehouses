@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植悟 - 我的植物</title>
+    <!-- 添加Font Awesome图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background-color: #fdf5e6;
+            padding-bottom: 70px; /* 预留底部导航高度 */
+        }
+        /* 头部区域 */
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: linear-gradient(to right, #fff, #f8d7ad);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+        .back-arrow {
+            width: 24px;
+            height: 24px;
+            margin-right: 16px;
+            cursor: pointer;
+            color: #666;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            background-color: #fff;
+            border-radius: 24px;
+            padding: 8px 16px;
+        }
+        .search-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            color: #666;
+        }
+        .search-input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 14px;
+        }
+        /* 主内容区 */
+        .section {
+            padding: 16px;
+            margin-top: 72px; /* 头部高度 */
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        /* 植物列表 */
+        .my-plants, .popular-plants {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        .plant-card {
+            background-color: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .add-plant {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 0;
+            cursor: pointer;
+        }
+        .add-icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 8px;
+            color: #999;
+        }
+        .add-text {
+            font-size: 14px;
+            color: #999;
+        }
+        .plant-info {
+            padding: 12px;
+        }
+        .plant-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #333;
+        }
+        .watering-tip {
+            font-size: 12px;
+            color: #666;
+        }
+        .plant-img, .popular-plant-img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+        .edit-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .edit-btn:hover {
+            color: #4CAF50;
+        }
+        /* 热门植物 */
+        .popular-plant-img {
+            height: 100px;
+        }
+        .popular-plant-name {
+            text-align: center;
+            padding: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            background-color: #fff;
+        }
+        /* 底部导航 - 完全复制index.html的样式 */
+        .nav {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            background-color: #fff;
+            border-top: 1px solid #e5e7eb;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+        .nav-item {
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .nav-item.active {
+            color: #81c784;
+        }
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        /* 弹窗样式调整（保持原有功能，优化样式适配整体） */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            display: none;
+        }
+        .modal-content {
+            width: 100%;
+            max-width: 400px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .close-btn {
+            color: #999;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: medium;
+            color: #333;
+            margin-bottom: 6px;
+        }
+        .form-input, .form-select {
+            width: 100%;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .form-input:focus, .form-select:focus {
+            border-color: #4CAF50;
+        }
+        .photo-upload {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .upload-item {
+            width: 100px;
+            height: 100px;
+            border: 2px dashed #eee;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            overflow: hidden;
+            position: relative;
+        }
+        .upload-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .upload-item:hover {
+            border-color: #4CAF50;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background-color: #3d9940;
+        }
+        .btn-secondary {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background-color: #eee;
+        }
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+        .required {
+            color: #ff4d4f;
+        }
+        .hidden {
+            display: none;
+        }
+        /* 植物详情弹窗样式 */
+        .plant-detail-modal .modal-content {
+            max-width: 350px;
+        }
+        .plant-detail-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .plant-detail-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .plant-detail-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .plant-detail-species {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .plant-detail-method {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .plant-detail-location {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .plant-detail-date {
+            font-size: 14px;
+            color: #666;
+        }
+        /* 搜索相关样式 */
+        .search-highlight {
+            background-color: #fff9c4;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 -->
+    <div class="header">
+        <svg class="back-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onclick="window.location.href='index.html'">
+            <path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="#666"/>
+        </svg>
+        <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15.5 14H14.71L14.17 13.46C15.24 12.16 15.5 10.59 15.5 9C15.5 5.13 12.37 2 8.5 2C4.63 2 1.5 5.13 1.5 9C1.5 12.87 4.63 16 8.5 16C10.09 16 11.63 15.66 12.82 15.04L13.36 15.59C12.06 16.66 10.47 17.24 8.5 17.24C6.56 17.24 4.84 16.86 3.45 16.14C1.97 15.34 0.86 14.02 0.86 12.22C0.86 10.42 1.97 9.1 3.45 8.3C4.84 7.58 6.56 7.2 8.5 7.2C10.47 7.2 12.06 7.78 13.36 8.85L12.82 9.4C11.63 8.78 10.09 8.44 8.5 8.44C6.91 8.44 5.37 8.8 4.18 9.42C3.0 10.04 2.17 11.04 1.83 12.22C1.49 13.4 2.02 14.84 3.17 15.84C4.32 16.84 5.76 17.37 7.04 17.37C8.32 17.37 9.76 16.84 10.91 15.84L15.5 11.26V14Z" fill="#666"/>
+            </svg>
+            <input type="text" class="search-input" id="searchInput" placeholder="搜索植物">
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="section">
+        <!-- 我的植物区域 -->
+        <div>
+            <h2 class="section-title">我的植物</h2>
+            <div class="my-plants" id="plantList">
+                <!-- 添加植物卡片 -->
+                <div class="plant-card add-plant" onclick="showAddPlantModal()">
+                    <svg class="add-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 7H11V11H7V13H11V17H13V13H17V11H13V7Z" fill="#999"/>
+                    </svg>
+                    <div class="add-text">添加植物</div>
+                </div>
+                <!-- 植物卡片将通过JS动态渲染 -->
+            </div>
+        </div>
+
+        <!-- 热门植物区域 -->
+        <div style="margin-top: 32px;">
+            <h2 class="section-title">热门植物</h2>
+            <div class="popular-plants" id="popularPlants">
+                <div class="plant-card">
+                    <img src="https://picsum.photos/seed/succulent/200/100" alt="多肉" class="popular-plant-img">
+                    <div class="popular-plant-name">多肉</div>
+                </div>
+                <div class="plant-card">
+                    <img src="https://picsum.photos/seed/pothos/200/100" alt="绿萝" class="popular-plant-img">
+                    <div class="popular-plant-name">绿萝</div>
+                </div>
+                <div class="plant-card">
+                    <img src="https://picsum.photos/seed/succulent2/200/100" alt="多肉" class="popular-plant-img">
+                    <div class="popular-plant-name">多肉</div>
+                </div>
+                <div class="plant-card">
+                    <img src="https://picsum.photos/seed/rose/200/100" alt="玫瑰" class="popular-plant-img">
+                    <div class="popular-plant-name">玫瑰</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 添加植物弹窗 -->
+    <div class="modal" id="addPlantModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">添加新植物</h2>
+                <svg class="close-btn" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onclick="hideAddPlantModal()">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z" fill="#999"/>
+                </svg>
+            </div>
+            <form id="addPlantForm" class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">植物昵称 <span class="required">*</span></label>
+                    <input type="text" id="plantNickname" placeholder="给植物起个可爱的名字吧" required
+                        class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">植物品种 <span class="required">*</span></label>
+                    <select id="plantSpecies" required class="form-select">
+                        <option value="">请选择品种</option>
+                        <option value="多肉">多肉植物（如：桃蛋、玉露）</option>
+                        <option value="龟背竹">龟背竹</option>
+                        <option value="绿萝">绿萝</option>
+                        <option value="满天星">满天星</option>
+                        <option value="吊兰">吊兰</option>
+                        <option value="发财树">发财树</option>
+                        <option value="其他">其他品种</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">栽培方式 <span class="required">*</span></label>
+                    <select id="cultivationMethod" required class="form-select">
+                        <option value="">请选择栽培方式</option>
+                        <option value="土培">土培</option>
+                        <option value="水培">水培</option>
+                        <option value="半水半土">半水半土</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">放置位置 <span class="required">*</span></label>
+                    <select id="plantLocation" required class="form-select">
+                        <option value="balcony">阳台</option>
+                        <option value="study">书房</option>
+                        <option value="office">公司</option>
+                        <option value="livingRoom">客厅</option>
+                        <option value="bedroom">卧室</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">种植日期 <span class="required">*</span></label>
+                    <input type="date" id="plantDate" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">植物照片（可选）</label>
+                    <div class="photo-upload">
+                        <div class="upload-item" id="photoUpload">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 7H11V11H7V13H11V17H13V13H17V11H13V7Z" fill="#999"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <input type="hidden" id="plantImageUrl" value="">
+                </div>
+                <button type="submit" class="btn btn-primary">保存植物档案</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑植物弹窗 -->
+    <div class="modal" id="editPlantModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">编辑植物信息</h2>
+                <svg class="close-btn" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onclick="hideEditPlantModal()">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z" fill="#999"/>
+                </svg>
+            </div>
+            <form id="editPlantForm" class="space-y-4">
+                <input type="hidden" id="editPlantId">
+                <div class="form-group">
+                    <label class="form-label">植物昵称 <span class="required">*</span></label>
+                    <input type="text" id="editPlantNickname" placeholder="给植物起个可爱的名字吧" required
+                        class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">植物品种 <span class="required">*</span></label>
+                    <select id="editPlantSpecies" required class="form-select">
+                        <option value="">请选择品种</option>
+                        <option value="多肉">多肉植物（如：桃蛋、玉露）</option>
+                        <option value="龟背竹">龟背竹</option>
+                        <option value="绿萝">绿萝</option>
+                        <option value="满天星">满天星</option>
+                        <option value="吊兰">吊兰</option>
+                        <option value="发财树">发财树</option>
+                        <option value="其他">其他品种</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">栽培方式 <span class="required">*</span></label>
+                    <select id="editCultivationMethod" required class="form-select">
+                        <option value="">请选择栽培方式</option>
+                        <option value="土培">土培</option>
+                        <option value="水培">水培</option>
+                        <option value="半水半土">半水半土</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">放置位置 <span class="required">*</span></label>
+                    <select id="editPlantLocation" required class="form-select">
+                        <option value="balcony">阳台</option>
+                        <option value="study">书房</option>
+                        <option value="office">公司</option>
+                        <option value="livingRoom">客厅</option>
+                        <option value="bedroom">卧室</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">种植日期 <span class="required">*</span></label>
+                    <input type="date" id="editPlantDate" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">植物照片（可选）</label>
+                    <div class="photo-upload" id="editPhotoContainer">
+                        <div class="upload-item" id="editPhotoUpload">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 7H11V11H7V13H11V17H13V13H17V11H13V7Z" fill="#999"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <input type="hidden" id="editPlantImageUrl" value="">
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="deletePlant()">删除植物</button>
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 植物详情弹窗 -->
+    <div class="modal plant-detail-modal" id="plantDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">植物详情</h2>
+                <svg class="close-btn" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onclick="hidePlantDetailModal()">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z" fill="#999"/>
+                </svg>
+            </div>
+            <div id="plantDetailContent">
+                <!-- 植物详情内容将通过JS动态渲染 -->
+            </div>
+            <div class="btn-group" style="margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="recordCare(currentPlantId, 'watering')">记录浇水</button>
+                <button type="button" class="btn btn-primary" onclick="showEditPlantModal(currentPlantId)">编辑信息</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 - 完全复制index.html的结构和样式 -->
+    <div class="nav">
+        <a href="index.html" class="nav-item active"><i class="fas fa-home nav-icon"></i>首页</a>
+        <a href="ai-assistant.html" class="nav-item"><i class="fas fa-comments nav-icon"></i>ai助手</a>
+        <a href="diary.html" class="nav-item"><i class="fas fa-seedling nav-icon"></i>植物</a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user nav-icon"></i>我的</a>
+    </div>
+
+    <script>
+        // 全局变量：当前筛选类型和当前植物ID
+        let currentFilter = 'all';
+        let currentPlantId = '';
+        let searchKeyword = '';
+
+        // 页面加载时渲染植物列表
+        window.addEventListener('load', () => {
+            renderPlantList();
+            // 初始化日期选择器默认值为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('plantDate').value = today;
+            document.getElementById('editPlantDate').value = today;
+            // 监听图片上传点击
+            initPhotoUpload();
+            initEditPhotoUpload();
+            
+            // 添加搜索功能
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', handleSearch);
+        });
+
+        // 获取所有植物（本地存储）
+        function getPlants() {
+            const plantsStr = localStorage.getItem('zhiwu_plants');
+            return plantsStr ? JSON.parse(plantsStr) : [];
+        }
+
+        // 保存植物到本地存储
+        function savePlant(plant) {
+            const plants = getPlants();
+            plants.push(plant);
+            localStorage.setItem('zhiwu_plants', JSON.stringify(plants));
+        }
+
+        // 获取日记（本地存储）
+        function getDiaries() {
+            const diariesStr = localStorage.getItem('zhiwu_diaries');
+            return diariesStr ? JSON.parse(diariesStr) : [];
+        }
+
+        // 保存日记到本地存储
+        function saveDiary(diary) {
+            const diaries = getDiaries();
+            diaries.push(diary);
+            localStorage.setItem('zhiwu_diaries', JSON.stringify(diaries));
+        }
+
+        // 格式化日期（YYYY-MM-DD 转 MM-DD）
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+
+        // 获取下次浇水提示文本
+        function getNextWateringText(plant) {
+            // 简单逻辑：种植时间越久，浇水间隔越长（示例逻辑，可根据品种调整）
+            const plantTime = new Date(plant.plantDate);
+            const now = new Date();
+            const days = Math.floor((now - plantTime) / (1000 * 60 * 60 * 24));
+            const interval = days < 30 ? 2 : 3; // 新植物2天浇一次，老植物3天浇一次
+
+            // 查找最后一次浇水时间
+            const lastWatering = localStorage.getItem(`zhiwu_lastWatering_${plant.id}`);
+            if (lastWatering) {
+                const lastDate = new Date(lastWatering);
+                const nextDate = new Date(lastDate);
+                nextDate.setDate(lastDate.getDate() + interval);
+                const diff = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24));
+                return diff > 0 ? `距离下次浇水还有：${diff}天` : '已到浇水时间～';
+            }
+            return `距离下次浇水还有：${interval}天`;
+        }
+
+        // 处理搜索
+        function handleSearch(e) {
+            searchKeyword = e.target.value.trim().toLowerCase();
+            renderPlantList();
+            filterPopularPlants();
+        }
+
+        // 高亮显示匹配文本
+        function highlightText(text, keyword) {
+            if (!keyword) return text;
+            
+            const regex = new RegExp(`(${keyword})`, 'gi');
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        // 渲染植物列表（支持筛选和搜索）
+        function renderPlantList() {
+            const plants = getPlants();
+            const plantList = document.getElementById('plantList');
+
+            // 筛选植物
+            let filteredPlants = currentFilter === 'all' 
+                ? plants 
+                : plants.filter(plant => {
+                    // 根据品种筛选（可扩展更多筛选逻辑）
+                    const speciesMap = {
+                        '多肉': ['多肉'],
+                        '观叶': ['龟背竹', '绿萝', '吊兰'],
+                        '开花': ['满天星', '玫瑰'],
+                        '绿植': ['发财树', '其他']
+                    };
+                    return speciesMap[currentFilter]?.includes(plant.species) || false;
+                });
+
+            // 应用搜索筛选
+            if (searchKeyword) {
+                filteredPlants = filteredPlants.filter(plant => 
+                    plant.nickname.toLowerCase().includes(searchKeyword) || 
+                    plant.species.toLowerCase().includes(searchKeyword)
+                );
+            }
+
+            // 清空列表（保留添加植物卡片）
+            const addCard = plantList.querySelector('.add-plant');
+            plantList.innerHTML = '';
+            plantList.appendChild(addCard);
+
+            // 如果没有搜索结果，显示提示
+            if (filteredPlants.length === 0 && searchKeyword) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = '没有找到匹配的植物';
+                plantList.appendChild(noResults);
+                return;
+            }
+
+            if (filteredPlants.length === 0) {
+                return;
+            }
+
+            // 渲染筛选后的植物卡片
+            filteredPlants.forEach(plant => {
+                const imageUrl = plant.imageUrl || '';
+                const nextWatering = getNextWateringText(plant);
+                
+                // 高亮显示匹配的文本
+                const highlightedNickname = highlightText(plant.nickname, searchKeyword);
+                const highlightedSpecies = highlightText(plant.species, searchKeyword);
+
+                const card = document.createElement('div');
+                card.className = 'plant-card';
+                card.innerHTML = `
+                    ${imageUrl ? `<img src="${imageUrl}" alt="${plant.nickname}" class="plant-img">` : 
+                      `<div class="plant-img bg-green-100 flex items-center justify-center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2ZM2 17L12 22L22 17L12 12L2 17Z" fill="#4CAF50"/></svg></div>`}
+                    <svg class="edit-btn" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onclick="showEditPlantModal('${plant.id}')">
+                        <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="#666"/>
+                    </svg>
+                    <div class="plant-info">
+                        <div class="plant-name">${highlightedNickname}</div>
+                        <div class="watering-tip">${nextWatering}</div>
+                    </div>
+                `;
+                // 点击卡片空白处显示植物详情
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('.edit-btn')) {
+                        showPlantDetailModal(plant.id);
+                    }
+                });
+                plantList.appendChild(card);
+            });
+        }
+
+        // 筛选热门植物
+        function filterPopularPlants() {
+            const popularPlantsContainer = document.getElementById('popularPlants');
+            const popularPlants = popularPlantsContainer.querySelectorAll('.plant-card');
+            
+            let hasVisiblePlants = false;
+            
+            popularPlants.forEach(plantCard => {
+                const plantName = plantCard.querySelector('.popular-plant-name').textContent.toLowerCase();
+                
+                if (!searchKeyword || plantName.includes(searchKeyword)) {
+                    plantCard.style.display = 'block';
+                    hasVisiblePlants = true;
+                    
+                    // 高亮显示匹配的文本
+                    if (searchKeyword) {
+                        const nameElement = plantCard.querySelector('.popular-plant-name');
+                        nameElement.innerHTML = highlightText(nameElement.textContent, searchKeyword);
+                    }
+                } else {
+                    plantCard.style.display = 'none';
+                }
+            });
+            
+            // 如果没有可见的热门植物且有关键词，显示提示
+            if (!hasVisiblePlants && searchKeyword) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = '热门植物中没有找到匹配的植物';
+                popularPlantsContainer.appendChild(noResults);
+            }
+        }
+
+        // 筛选植物
+        function filterPlants(type) {
+            currentFilter = type;
+            // 更新筛选按钮样式
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(type === 'all' ? '全部' : type)) {
+                    btn.classList.add('active');
+                }
+            });
+            // 重新渲染列表
+            renderPlantList();
+        }
+
+        // 显示添加植物弹窗
+        function showAddPlantModal() {
+            document.getElementById('addPlantModal').style.display = 'flex';
+            // 重置表单
+            document.getElementById('addPlantForm').reset();
+            document.getElementById('plantImageUrl').value = '';
+            // 重置图片上传预览
+            const photoUpload = document.getElementById('photoUpload');
+            photoUpload.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 7H11V11H7V13H11V17H13V13H17V11H13V7Z" fill="#999"/></svg>';
+            photoUpload.style.borderColor = '#eee';
+        }
+
+        // 隐藏添加植物弹窗
+        function hideAddPlantModal() {
+            document.getElementById('addPlantModal').style.display = 'none';
+        }
+
+        // 显示编辑植物弹窗
+        function showEditPlantModal(plantId) {
+            const plants = getPlants();
+            const plant = plants.find(p => p.id === plantId);
+            if (!plant) return;
+
+            // 填充表单数据
+            document.getElementById('editPlantId').value = plant.id;
+            document.getElementById('editPlantNickname').value = plant.nickname;
+            document.getElementById('editPlantSpecies').value = plant.species;
+            document.getElementById('editCultivationMethod').value = plant.cultivationMethod;
+            document.getElementById('editPlantLocation').value = plant.location;
+            document.getElementById('editPlantDate').value = plant.plantDate;
+            document.getElementById('editPlantImageUrl').value = plant.imageUrl || '';
+
+            // 渲染图片预览
+            const editPhotoUpload = document.getElementById('editPhotoUpload');
+            if (plant.imageUrl) {
+                editPhotoUpload.innerHTML = `<img src="${plant.imageUrl}" alt="预览" class="w-full h-full object-cover">`;
+                editPhotoUpload.style.borderColor = '#4CAF50';
+            } else {
+                editPhotoUpload.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 7H11V11H7V13H11V17H13V13H17V11H13V7Z" fill="#999"/></svg>';
+                editPhotoUpload.style.borderColor = '#eee';
+            }
+
+            document.getElementById('editPlantModal').style.display = 'flex';
+            // 隐藏植物详情弹窗
+            hidePlantDetailModal();
+        }
+
+        // 隐藏编辑植物弹窗
+        function hideEditPlantModal() {
+            document.getElementById('editPlantModal').style.display = 'none';
+        }
+
+        // 显示植物详情弹窗
+        function showPlantDetailModal(plantId) {
+            const plants = getPlants();
+            const plant = plants.find(p => p.id === plantId);
+            if (!plant) return;
+            
+            currentPlantId = plantId;
+            
+            // 位置映射
+            const locationMap = {
+                'balcony': '阳台',
+                'study': '书房',
+                'office': '公司',
+                'livingRoom': '客厅',
+                'bedroom': '卧室'
+            };
+            
+            const plantDetailContent = document.getElementById('plantDetailContent');
+            plantDetailContent.innerHTML = `
+                ${plant.imageUrl ? `<img src="${plant.imageUrl}" alt="${plant.nickname}" class="plant-detail-img">` : 
+                  `<div class="plant-detail-img bg-green-100 flex items-center justify-center"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2ZM2 17L12 22L22 17L12 12L2 17Z" fill="#4CAF50"/></svg></div>`}
+                <div class="plant-detail-info">
+                    <div class="plant-detail-name">${plant.nickname}</div>
+                    <div class="plant-detail-species">品种：${plant.species}</div>
+                    <div class="plant-detail-method">栽培方式：${plant.cultivationMethod}</div>
+                    <div class="plant-detail-location">放置位置：${locationMap[plant.location] || plant.location}</div>
+                    <div class="plant-detail-date">种植日期：${plant.plantDate}</div>
+                </div>
+            `;
+            
+            document.getElementById('plantDetailModal').style.display = 'flex';
+        }
+
+        // 隐藏植物详情弹窗
+        function hidePlantDetailModal() {
+            document.getElementById('plantDetailModal').style.display = 'none';
+        }
+
+        // 初始化图片上传（添加页）
+        function initPhotoUpload() {
+            const photoUpload = document.getElementById('photoUpload');
+            photoUpload.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    // 模拟上传，生成临时URL
+                    const reader = new FileReader();
+                    reader.onload = (res) => {
+                        photoUpload.innerHTML = `<img src="${res.target.result}" alt="预览" class="w-full h-full object-cover">`;
+                        photoUpload.style.borderColor = '#4CAF50';
+                        // 更新图片URL
+                        document.getElementById('plantImageUrl').value = res.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                };
+                input.click();
+            });
+        }
+
+        // 初始化图片上传（编辑页）
+        function initEditPhotoUpload() {
+            const editPhotoUpload = document.getElementById('editPhotoUpload');
+            editPhotoUpload.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    // 模拟上传，生成临时URL
+                    const reader = new FileReader();
+                    reader.onload = (res) => {
+                        editPhotoUpload.innerHTML = `<img src="${res.target.result}" alt="预览" class="w-full h-full object-cover">`;
+                        editPhotoUpload.style.borderColor = '#4CAF50';
+                        // 更新图片URL
+                        document.getElementById('editPlantImageUrl').value = res.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                };
+                input.click();
+            });
+        }
+
+        // 提交添加植物表单
+        document.getElementById('addPlantForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nickname = document.getElementById('plantNickname').value.trim();
+            const species = document.getElementById('plantSpecies').value.trim();
+            const cultivationMethod = document.getElementById('cultivationMethod').value.trim();
+            const location = document.getElementById('plantLocation').value.trim();
+            const plantDate = document.getElementById('plantDate').value.trim();
+            const imageUrl = document.getElementById('plantImageUrl').value.trim();
+
+            // 表单验证
+            if (!nickname) {
+                alert('请输入植物昵称');
+                return;
+            }
+            if (!species) {
+                alert('请选择植物品种');
+                return;
+            }
+            if (!plantDate) {
+                alert('请选择种植日期');
+                return;
+            }
+
+            // 保存植物信息
+            const plant = {
+                id: Date.now().toString(),
+                nickname,
+                species,
+                cultivationMethod,
+                location,
+                plantDate,
+                imageUrl: imageUrl
+            };
+            savePlant(plant);
+            hideAddPlantModal();
+            renderPlantList();
+            alert('植物档案添加成功！');
+        });
+
+        // 提交编辑植物表单
+        document.getElementById('editPlantForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const plantId = document.getElementById('editPlantId').value.trim();
+            const nickname = document.getElementById('editPlantNickname').value.trim();
+            const species = document.getElementById('editPlantSpecies').value.trim();
+            const cultivationMethod = document.getElementById('editCultivationMethod').value.trim();
+            const location = document.getElementById('editPlantLocation').value.trim();
+            const plantDate = document.getElementById('editPlantDate').value.trim();
+            const imageUrl = document.getElementById('editPlantImageUrl').value.trim();
+
+            // 表单验证
+            if (!nickname) {
+                alert('请输入植物昵称');
+                return;
+            }
+            if (!species) {
+                alert('请选择植物品种');
+                return;
+            }
+            if (!plantDate) {
+                alert('请选择种植日期');
+                return;
+            }
+
+            // 更新植物信息
+            let plants = getPlants();
+            const plantIdx = plants.findIndex(p => p.id === plantId);
+            if (plantIdx === -1) return;
+            plants[plantIdx] = {
+                ...plants[plantIdx],
+                nickname,
+                species,
+                cultivationMethod,
+                location,
+                plantDate,
+                imageUrl: imageUrl
+            };
+            localStorage.setItem('zhiwu_plants', JSON.stringify(plants));
+            hideEditPlantModal();
+            renderPlantList();
+            alert('植物信息修改成功！');
+        });
+
+        // 删除植物
+        function deletePlant() {
+            const plantId = document.getElementById('editPlantId').value.trim();
+            if (!confirm('确定要删除这株植物吗？删除后相关数据将无法恢复')) {
+                return;
+            }
+            // 删除植物
+            let plants = getPlants();
+            plants = plants.filter(p => p.id !== plantId);
+            localStorage.setItem('zhiwu_plants', JSON.stringify(plants));
+            // 删除相关日记
+            let diaries = getDiaries();
+            diaries = diaries.filter(d => d.plantId !== plantId);
+            localStorage.setItem('zhiwu_diaries', JSON.stringify(diaries));
+            // 删除养护记录
+            localStorage.removeItem(`zhiwu_lastWatering_${plantId}`);
+
+            hideEditPlantModal();
+            renderPlantList();
+            alert('植物删除成功！');
+        }
+
+        // 记录养护操作
+        function recordCare(plantId, activityType) {
+            const plants = getPlants();
+            const plant = plants.find(p => p.id === plantId);
+            if (!plant) return;
+
+            const activityMap = {
+                watering: '浇水',
+                fertilizing: '施肥',
+                pruning: '剪枝',
+                repotting: '换盆'
+            };
+
+            // 记录养护操作（本地存储）
+            localStorage.setItem(`zhiwu_last${activityType.charAt(0).toUpperCase() + activityType.slice(1)}_${plantId}`, new Date().toISOString().split('T')[0]);
+
+            // 自动添加日记
+            const diary = {
+                plantId,
+                content: `今日给${plant.nickname}进行了${activityMap[activityType]}操作`,
+                activityType,
+                weather: 'sunny',
+                temperatureRange: '6°C-15°C',
+                imageUrl: ''
+            };
+            saveDiary(diary);
+
+            alert(`成功记录${plant.nickname}的${activityMap[activityType]}操作！`);
+            renderPlantList();
+            hidePlantDetailModal();
+        }
+    </script>
+</body>
+</html>

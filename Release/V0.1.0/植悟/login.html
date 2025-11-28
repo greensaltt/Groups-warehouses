@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植悟 - 登录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        /* 基础样式 */
+        body {
+            font-family: 'Inter', 'Microsoft YaHei', 'Source Han Sans', sans-serif;
+            background: #FFFFFF;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            margin: 0;
+            position: relative;
+        }
+
+        /* 背景图 */
+        .background-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('./assets/images/登录界面底图.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 1;
+            z-index: 0;
+        }
+
+        /* 登录容器 */
+        .login-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 登录模块 */
+        .login-module {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* 标题样式 */
+        .login-title {
+            color: #000000;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+            position: relative;
+            margin: 0;
+            padding: 24px 0 24px 0;
+        }
+
+        .login-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background-color: #2E8B57;
+        }
+
+        /* 标签栏 */
+        .tab-container {
+            width: 100%;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            margin: 8px 0 12px 0;
+            position: relative;
+        }
+
+        .tab {
+            font-weight: 500;
+            color: #333333;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab.active {
+            color: #2E8B57;
+            font-weight: 500;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #2E8B57;
+            transition: all 0.3s ease;
+        }
+
+        /* 输入框组 */
+        .input-group {
+            width: 100%;
+            margin: 12px 0;
+        }
+
+        .input-label {
+            color: #333333;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-field {
+            width: 100%;
+            height: 50px;
+            padding: 12px 16px;
+            border: 1px solid #EEEEEE;
+            border-radius: 8px;
+            background: #FFFFFF;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 400;
+            color: #333333;
+            box-sizing: border-box;
+        }
+
+        .input-field:focus {
+            border-color: #2E8B57;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(46, 139, 87, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: #CCCCCC;
+            font-weight: 400;
+        }
+
+        /* 密码输入框特殊样式 */
+        .password-container {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #AAAAAA;
+            cursor: pointer;
+        }
+
+        /* 忘记密码链接 */
+        .forgot-password {
+            color: #AAAAAA;
+            font-size: 12px;
+            font-weight: 400;
+            text-decoration: none;
+            transition: color 0.2s ease;
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 24px;
+            line-height: 24px;
+        }
+
+        .forgot-password:hover {
+            color: #808080;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            width: 100%;
+            height: 56px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #2E8B57 0%, #90EE90 100%);
+            color: #FFFFFF;
+            margin: 20px 0 16px 0;
+            box-shadow: 0 4px 12px rgba(46, 139, 87, 0.3);
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #228B22 0%, #ADFF2F 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(46, 139, 87, 0.4);
+        }
+
+        .btn-login:active {
+            transform: scale(0.98);
+        }
+
+        .btn-register {
+            background: #FFFFFF;
+            border: 1px solid #EEEEEE;
+            color: #333333;
+        }
+
+        .btn-register:hover {
+            border-color: #2E8B57;
+            color: #2E8B57;
+        }
+
+        /* 品牌标识 */
+        .brand-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            margin: 24px 0 0 0;
+        }
+
+        .brand-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            position: relative;
+        }
+
+        .pot {
+            width: 100%;
+            height: 16px;
+            background: #FFA07A;
+            border-radius: 4px 4px 0 0;
+            position: absolute;
+            bottom: 0;
+        }
+
+        .pot::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: -2px;
+            width: calc(100% + 4px);
+            height: 4px;
+            background: #FFA07A;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .plant {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: #2E8B57;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .plant::before, .plant::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #2E8B57;
+            border-radius: 50%;
+        }
+
+        .plant::before {
+            top: -4px;
+            left: -6px;
+        }
+
+        .plant::after {
+            top: -4px;
+            right: -6px;
+        }
+
+        .brand-text {
+            color: #333333;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        /* 验证码输入组 */
+        .captcha-container {
+            display: flex;
+            gap: 12px;
+        }
+
+        .captcha-input {
+            flex: 1;
+        }
+
+        .captcha-btn {
+            width: 120px;
+            height: 50px;
+            background: #F8F9FA;
+            border: 1px solid #EEEEEE;
+            border-radius: 8px;
+            color: #2E8B57;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .captcha-btn:hover {
+            background: #EEEEEE;
+        }
+
+        .captcha-btn:disabled {
+            background: #F8F9FA;
+            color: #CCCCCC;
+            cursor: not-allowed;
+        }
+
+        /* 响应式设计 */
+        /* 移动端 (<768px) */
+        @media (max-width: 767px) {
+            .login-module {
+                width: 80%;
+                min-width: 280px;
+                padding: 20px;
+            }
+            
+            .login-title {
+                font-size: 20px;
+                line-height: 32px;
+                padding: 16px 0 20px 0;
+            }
+            
+            .tab {
+                font-size: 14px;
+                width: 80px;
+            }
+            
+            .input-field {
+                font-size: 12px;
+                height: 44px;
+            }
+            
+            .btn {
+                font-size: 14px;
+                height: 48px;
+            }
+            
+            .brand-icon {
+                width: 20px;
+                height: 20px;
+            }
+            
+            .brand-text {
+                font-size: 14px;
+            }
+        }
+
+        /* 平板端 (768-1200px) */
+        @media (min-width: 768px) and (max-width: 1199px) {
+            .login-module {
+                width: 60%;
+                padding: 30px;
+            }
+            
+            .login-title {
+                font-size: 22px;
+                line-height: 32px;
+            }
+            
+            .tab {
+                font-size: 15px;
+                width: 90px;
+            }
+            
+            .input-field {
+                font-size: 13px;
+            }
+            
+            .btn {
+                font-size: 15px;
+            }
+            
+            .brand-icon {
+                width: 22px;
+                height: 22px;
+            }
+            
+            .brand-text {
+                font-size: 15px;
+            }
+        }
+
+        /* 桌面端 (≥1200px) */
+        @media (min-width: 1200px) {
+            .login-module {
+                width: 400px;
+                padding: 40px;
+            }
+            
+            .login-title {
+                font-size: 24px;
+                line-height: 32px;
+            }
+            
+            .tab {
+                font-size: 16px;
+                width: 100px;
+            }
+            
+            .input-field {
+                font-size: 14px;
+            }
+            
+            .btn {
+                font-size: 16px;
+            }
+            
+            .brand-icon {
+                width: 24px;
+                height: 24px;
+            }
+            
+            .brand-text {
+                font-size: 16px;
+            }
+        }
+
+        /* 隐藏元素 */
+        .hidden {
+            display: none;
+        }
+
+        /* 表单元素通用样式 */
+        .form-container {
+            width: 100%;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2E8B57',
+                        secondary: '#FFA500',
+                        neutral: '#f3f4f6',
+                        dark: '#1f2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <!-- 背景图 -->
+    <div class="background-image"></div>
+    
+    <!-- 登录模块 -->
+    <div class="login-container">
+        <div class="login-module">
+            <!-- 标题 -->
+            <h1 class="login-title">登录</h1>
+            
+            <!-- 标签栏 -->
+            <div class="tab-container">
+                <div class="tab active" data-type="phone_pwd" style="width: 100px;">密码登录</div>
+                <div class="tab" data-type="phone_code" style="width: 100px;">验证码登录</div>
+            </div>
+            
+            <!-- 表单容器 -->
+            <div class="form-container">
+                <form id="loginForm">
+                    <!-- 手机号/账号输入框 -->
+                    <div class="input-group">
+                        <label class="input-label">手机号/账号</label>
+                        <input type="text" id="username" class="input-field" placeholder="请输入手机号或账号" required>
+                    </div>
+                    
+                    <!-- 密码输入框 -->
+                    <div class="input-group" id="passwordGroup">
+                        <div style="position: relative;">
+                            <label class="input-label">密码</label>
+                            <a href="#" class="forgot-password">忘记密码？</a>
+                        </div>
+                        <div class="password-container">
+                            <input type="password" id="password" class="input-field" placeholder="请输入密码" required>
+                            <button type="button" id="showPwd" class="password-toggle">
+                                <i class="bi bi-eye-slash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 验证码输入框 -->
+                    <div class="input-group hidden" id="captchaGroup">
+                        <label class="input-label">验证码</label>
+                        <div class="captcha-container">
+                            <input type="text" id="captcha" class="input-field captcha-input" placeholder="请输入6位验证码">
+                            <button type="button" id="getCaptcha" class="captcha-btn">获取验证码</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 登录按钮 -->
+                    <button type="submit" class="btn btn-login">登录</button>
+                    
+                    <!-- 注册按钮 -->
+                    <a href="register.html" class="btn btn-register">注册</a>
+                </form>
+                
+                <!-- 品牌标识 -->
+                <div class="brand-container">
+                    <div class="brand-icon">
+                        <div class="pot">
+                            <div class="plant"></div>
+                        </div>
+                    </div>
+                    <span class="brand-text">植悟</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 登录选项卡切换
+        const tabs = document.querySelectorAll('.tab');
+        const passwordGroup = document.getElementById('passwordGroup');
+        const captchaGroup = document.getElementById('captchaGroup');
+        let loginType = 'phone_pwd'; // 默认登录方式
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 切换选项卡样式
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                });
+                tab.classList.add('active');
+
+                // 切换表单内容
+                loginType = tab.dataset.type;
+                if (loginType === 'phone_pwd') {
+                    passwordGroup.classList.remove('hidden');
+                    captchaGroup.classList.add('hidden');
+                    document.getElementById('password').setAttribute('required', true);
+                    document.getElementById('captcha').removeAttribute('required');
+                } else {
+                    passwordGroup.classList.add('hidden');
+                    captchaGroup.classList.remove('hidden');
+                    document.getElementById('password').removeAttribute('required');
+                    document.getElementById('captcha').setAttribute('required', true);
+                }
+            });
+        });
+
+        // 显示/隐藏密码
+        const showPwdBtn = document.getElementById('showPwd');
+        const passwordInput = document.getElementById('password');
+        showPwdBtn.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            showPwdBtn.innerHTML = type === 'password' ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+        });
+
+        // 登录表单提交
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const captcha = document.getElementById('captcha').value.trim();
+
+            // 表单验证
+            if (!username) {
+                alert('请输入手机号或账号');
+                return;
+            }
+
+            if (loginType === 'phone_pwd' && !password) {
+                alert('请输入密码');
+                return;
+            }
+
+            if (loginType === 'phone_code' && captcha.length !== 6) {
+                alert('请输入正确的6位验证码');
+                return;
+            }
+
+            // 模拟登录成功（验证码默认123456）
+            if (loginType === 'phone_code' && captcha !== '123456') {
+                alert('验证码错误，请重新输入');
+                return;
+            }
+
+            // 存储用户信息
+            const user = {
+                username: username,
+                nickname: '植物爱好者',
+                avatar: '',
+                id: Date.now().toString(),
+                token: 'mock_token_' + Date.now()
+            };
+            localStorage.setItem('zhiwu_user', JSON.stringify(user));
+            alert('登录成功！');
+            window.location.href = 'index.html';
+        });
+
+        // 模拟获取验证码
+        document.getElementById('getCaptcha').addEventListener('click', () => {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                alert('请输入手机号或账号');
+                return;
+            }
+
+            const btn = document.getElementById('getCaptcha');
+            btn.disabled = true;
+            btn.textContent = '60秒后重新获取';
+            let count = 60;
+            const timer = setInterval(() => {
+                count--;
+                btn.textContent = `${count}秒后重新获取`;
+                if (count === 0) {
+                    clearInterval(timer);
+                    btn.disabled = false;
+                    btn.textContent = '获取验证码';
+                }
+            }, 1000);
+
+            alert('验证码已发送，请注意查收（模拟验证码：123456）');
+        });
+
+        // 添加按钮按压效果
+        document.querySelector('.btn-login').addEventListener('mousedown', function() {
+            this.style.transform = 'scale(0.98)';
+        });
+        
+        document.querySelector('.btn-login').addEventListener('mouseup', function() {
+            this.style.transform = '';
+        });
+        
+        document.querySelector('.btn-login').addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    </script>
+</body>
+</html>

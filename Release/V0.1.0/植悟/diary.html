@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植物日记</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body {
+            background-color: #fdf6e3;
+            padding-bottom: 60px; /* 底部导航高度 */
+        }
+        /* 植物日记头部样式 */
+        .header {
+            padding: 20px;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .weather {
+            display: flex;
+            align-items: center;
+            background-color: #aed581;
+            border-radius: 10px;
+            padding: 10px;
+            color: white;
+        }
+        .weather-text {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        .temperature {
+            font-size: 16px;
+        }
+        .weather-icon {
+            margin-left: auto;
+        }
+        /* 筛选栏样式 */
+        .filter-bar {
+            background-color: white;
+            border-radius: 10px;
+            margin: 0 20px;
+            padding: 15px;
+        }
+        .filter-row {
+            margin-bottom: 10px;
+        }
+        .filter-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .filter-select {
+            width: 100%;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 8px;
+            font-size: 14px;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .filter-btn {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: none;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .filter-btn.active {
+            background-color: #81c784;
+            color: white;
+        }
+        .filter-btn:not(.active) {
+            background-color: #f5f5f5;
+            color: #666;
+        }
+        /* 植物卡片样式 */
+        .plant-card {
+            background-color: white;
+            border-radius: 10px;
+            margin: 20px;
+            padding: 15px;
+        }
+        .plant-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .plant-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .plant-name {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .plant-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        /* 日记条目样式 */
+        .diary-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .diary-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .diary-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .diary-date {
+            font-size: 16px;
+        }
+        .diary-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .diary-action {
+            color: #999;
+            cursor: pointer;
+        }
+        .diary-action.edit:hover {
+            color: #81c784;
+        }
+        .diary-action.delete:hover {
+            color: #e53935;
+        }
+        .diary-tags {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        .tag {
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 8px;
+            color: white;
+        }
+        .tag-water {
+            background-color: #4dd0e1;
+        }
+        .tag-fertilize {
+            background-color: #fbc02d;
+        }
+        .tag-prune {
+            background-color: #81c784;
+        }
+        .tag-repot {
+            background-color: #9575cd;
+        }
+        .tag-bloom {
+            background-color: #e91e63;
+        }
+        .tag-pest {
+            background-color: #ff9800;
+        }
+        .diary-content {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .diary-imgs {
+            display: flex;
+            margin-bottom: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .diary-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 5px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+        /* 空状态样式 */
+        .empty-state {
+            background-color: white;
+            border-radius: 10px;
+            margin: 20px;
+            padding: 30px 15px;
+            text-align: center;
+        }
+        .empty-icon {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        .empty-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .empty-subtext {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 20px;
+        }
+        .empty-btn {
+            background-color: #81c784;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        /* 添加按钮样式 */
+        .add-btn {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #81c784;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 30px;
+            text-decoration: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        /* 底部导航样式 */
+        .nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: white;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-top: 1px solid #eee;
+        }
+        .nav-item {
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .nav-item.active {
+            color: #81c784;
+        }
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        /* 添加日记弹窗样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 100;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background-color: white;
+            width: 100%;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        /* 添加日记表单样式 */
+        .add-diary-header {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+        .back-btn {
+            width: 24px;
+            height: 24px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%234CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="19 12 12 19 5 12 12 5 19 12"></polyline></svg>') no-repeat center;
+        }
+        .add-diary-title {
+            flex: 1;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        .add-diary-main {
+            padding: 16px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .form-select, .form-input {
+            width: 100%;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .text-area {
+            width: 100%;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            min-height: 150px;
+            font-family: "微软雅黑", sans-serif;
+            font-size: 16px;
+        }
+        .text-placeholder {
+            font-size: 16px;
+            color: #999;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .hint-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+            display: block;
+        }
+        .photo-btn {
+            width: 120px;
+            height: 120px;
+            background: #fff;
+            border: 1px dashed #ddd;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            cursor: pointer;
+        }
+        .photo-icon {
+            width: 32px;
+            height: 32px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>') no-repeat center;
+            margin-bottom: 8px;
+        }
+        .photo-text {
+            font-size: 14px;
+            color: #666;
+        }
+        .photo-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .preview-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            object-fit: cover;
+            position: relative;
+        }
+        .remove-photo {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #e53935;
+            border: 1px solid #e53935;
+            cursor: pointer;
+        }
+        .complete-btn {
+            width: 100%;
+            height: 44px;
+            background: linear-gradient(to right, #2E7D32, #4CAF50);
+            color: #fff;
+            border: none;
+            border-radius: 22px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        /* 编辑日记弹窗额外样式 */
+        .edit-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .cancel-btn {
+            flex: 1;
+            height: 44px;
+            background-color: #f5f5f5;
+            color: #666;
+            border: none;
+            border-radius: 22px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .save-btn {
+            flex: 1;
+            height: 44px;
+            background: linear-gradient(to right, #2E7D32, #4CAF50);
+            color: #fff;
+            border: none;
+            border-radius: 22px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">植物日记</div>
+        <div class="weather">
+            <div class="weather-text">晴</div>
+            <div class="temperature">6℃-15℃</div>
+            <div class="weather-icon">
+                <i class="fas fa-sun" style="font-size: 30px; color: #ffeb3b;"></i>
+                <i class="fas fa-cloud" style="font-size: 20px; color: #e3f2fd; margin-top: -10px;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+        <div class="filter-row">
+            <div class="filter-label">筛选植物</div>
+            <select id="diaryPlantFilter" class="filter-select">
+                <option value="">全部植物</option>
+                <!-- 植物选项通过JS动态加载 -->
+            </select>
+        </div>
+        <div class="filter-row">
+            <div class="filter-label">筛选类型</div>
+            <div class="filter-buttons">
+                <button class="filter-btn active">全部日记</button>
+                <button class="filter-btn">浇水记录</button>
+                <button class="filter-btn">施肥记录</button>
+                <button class="filter-btn">剪枝记录</button>
+                <button class="filter-btn">开花记录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日记列表区 -->
+    <div id="diaryList">
+        <!-- 日记卡片通过JS动态渲染 -->
+        <div class="plant-card">
+            <div class="plant-header">
+                <img src="https://via.placeholder.com/80" alt="龟背竹" class="plant-img">
+                <div>
+                    <div class="plant-name">龟背竹</div>
+                    <div class="plant-info">添加时间：2025年11月1日</div>
+                    <div class="plant-info">距离下次浇水还有：2天</div>
+                </div>
+            </div>
+
+            <div class="diary-item">
+                <div class="diary-header">
+                    <div class="diary-date">2025年11月8日</div>
+                    <div class="diary-actions">
+                        <span class="diary-action edit" onclick="showEditDiaryModal()"><i class="fas fa-pen"></i></span>
+                        <span class="diary-action delete" onclick="deleteDiaryConfirm()"><i class="fas fa-trash"></i></span>
+                    </div>
+                </div>
+                <div class="diary-tags">
+                    <span class="tag tag-water">浇水</span>
+                    <span class="tag tag-fertilize">施肥</span>
+                </div>
+                <div class="diary-content">今天叶子变黄了一点。</div>
+                <div class="diary-imgs">
+                    <img src="https://via.placeholder.com/100" alt="植物照片" class="diary-img">
+                    <img src="https://via.placeholder.com/100" alt="植物照片" class="diary-img">
+                </div>
+            </div>
+
+            <div class="diary-item">
+                <div class="diary-header">
+                    <div class="diary-date">2025年11月15日</div>
+                    <div class="diary-actions">
+                        <span class="diary-action edit" onclick="showEditDiaryModal()"><i class="fas fa-pen"></i></span>
+                        <span class="diary-action delete" onclick="deleteDiaryConfirm()"><i class="fas fa-trash"></i></span>
+                    </div>
+                </div>
+                <div class="diary-tags">
+                    <span class="tag tag-water">浇水</span>
+                    <span class="tag tag-prune">剪枝</span>
+                </div>
+                <div class="diary-content">叶子变大了。</div>
+                <div class="diary-imgs">
+                    <img src="https://via.placeholder.com/100" alt="植物照片" class="diary-img">
+                    <img src="https://via.placeholder.com/100" alt="植物照片" class="diary-img">
+                </div>
+            </div>
+
+            <div class="diary-item">
+                <div class="diary-header">
+                    <div class="diary-date">2025年11月16日</div>
+                    <div class="diary-actions">
+                        <span class="diary-action edit" onclick="showEditDiaryModal()"><i class="fas fa-pen"></i></span>
+                        <span class="diary-action delete" onclick="deleteDiaryConfirm()"><i class="fas fa-trash"></i></span>
+                    </div>
+                </div>
+                <div class="diary-tags">
+                    <span class="tag tag-water">浇水</span>
+                </div>
+                <div class="diary-content">今天没什么变化。</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 空状态提示 -->
+    <div id="emptyDiaryTip" class="empty-state hidden">
+        <div class="empty-icon">
+            <i class="fas fa-book-open"></i>
+        </div>
+        <div class="empty-text">还没有种植日记哦</div>
+        <div class="empty-subtext">记录植物的每一次成长，留住养护的美好瞬间～</div>
+        <button class="empty-btn" onclick="showAddDiaryModal()">记录第一篇日记</button>
+    </div>
+
+    <a href="#" class="add-btn" onclick="showAddDiaryModal()">+</a>
+
+    <div class="nav">
+        <a href="index.html" class="nav-item"><i class="fas fa-home nav-icon"></i>首页</a>
+        <a href="ai-assistant.html" class="nav-item"><i class="fas fa-comments nav-icon"></i>ai助手</a>
+        <a href="diary.html" class="nav-item active"><i class="fas fa-seedling nav-icon"></i>植物</a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user nav-icon"></i>我的</a>
+    </div>
+
+    <!-- 添加日记弹窗 -->
+    <div id="addDiaryModal" class="modal">
+        <div class="modal-content">
+            <div class="add-diary-header">
+                <div class="back-btn" onclick="hideAddDiaryModal()"></div>
+                <div class="add-diary-title">添加日记</div>
+            </div>
+            <div class="add-diary-main">
+                <div class="form-group">
+                    <label class="form-label">选择植物 <span style="color: red;">*</span></label>
+                    <select id="diaryPlantId" class="form-select" required>
+                        <option value="">请选择要记录的植物</option>
+                        <!-- 植物选项通过JS动态加载 -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">养护类型</label>
+                    <select id="diaryActivityType" class="form-select">
+                        <option value="">日常记录</option>
+                        <option value="watering">浇水</option>
+                        <option value="fertilizing">施肥</option>
+                        <option value="pruning">剪枝</option>
+                        <option value="repotting">换盆</option>
+                        <option value="blooming">开花</option>
+                        <option value="pestControl">病虫害防治</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">今日天气</label>
+                    <select id="diaryWeather" class="form-select">
+                        <option value="sunny">晴</option>
+                        <option value="cloudy">多云</option>
+                        <option value="rainy">雨</option>
+                        <option value="windy">风</option>
+                        <option value="snowy">雪</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">温度范围</label>
+                    <input type="text" id="diaryTemperature" placeholder="例如：6°C-15°C" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <span class="text-placeholder">点击输入文本~</span>
+                    <textarea id="diaryContent" class="text-area" placeholder="可以在这里记录植物发生的变化哦~"></textarea>
+                    <span class="hint-text"><span id="contentCount">0</span>/500 字</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">上传图片（可选，最多9张）</label>
+                    <div class="photo-preview" id="diaryPhotoContainer">
+                        <div class="photo-btn" id="addPhotoBtn">
+                            <div class="photo-icon"></div>
+                            <div class="photo-text">点击添加植物照片</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="complete-btn" onclick="saveDiary()">完成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑日记弹窗 -->
+    <div id="editDiaryModal" class="modal">
+        <div class="modal-content">
+            <div class="add-diary-header">
+                <div class="back-btn" onclick="hideEditDiaryModal()"></div>
+                <div class="add-diary-title">编辑日记</div>
+            </div>
+            <div class="add-diary-main">
+                <input type="hidden" id="editDiaryId">
+                
+                <div class="form-group">
+                    <label class="form-label">选择植物 <span style="color: red;">*</span></label>
+                    <select id="editDiaryPlantId" class="form-select" required>
+                        <option value="">请选择要记录的植物</option>
+                        <!-- 植物选项通过JS动态加载 -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">养护类型</label>
+                    <select id="editDiaryActivityType" class="form-select">
+                        <option value="">日常记录</option>
+                        <option value="watering">浇水</option>
+                        <option value="fertilizing">施肥</option>
+                        <option value="pruning">剪枝</option>
+                        <option value="repotting">换盆</option>
+                        <option value="blooming">开花</option>
+                        <option value="pestControl">病虫害防治</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">今日天气</label>
+                    <select id="editDiaryWeather" class="form-select">
+                        <option value="sunny">晴</option>
+                        <option value="cloudy">多云</option>
+                        <option value="rainy">雨</option>
+                        <option value="windy">风</option>
+                        <option value="snowy">雪</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">温度范围</label>
+                    <input type="text" id="editDiaryTemperature" placeholder="例如：6°C-15°C" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <span class="text-placeholder">点击输入文本~</span>
+                    <textarea id="editDiaryContent" class="text-area" placeholder="可以在这里记录植物发生的变化哦~"></textarea>
+                    <span class="hint-text"><span id="editContentCount">0</span>/500 字</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">上传图片（可选，最多9张）</label>
+                    <div class="photo-preview" id="editDiaryPhotoContainer">
+                        <div class="photo-btn" id="editAddPhotoBtn">
+                            <div class="photo-icon"></div>
+                            <div class="photo-text">点击添加植物照片</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="edit-actions">
+                    <button class="cancel-btn" onclick="hideEditDiaryModal()">取消</button>
+                    <button class="save-btn" onclick="updateDiary()">保存修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时初始化
+        window.addEventListener('load', () => {
+            // 加载植物选项
+            loadPlantOptions();
+            // 绑定筛选事件
+            bindFilterEvents();
+            // 绑定内容计数事件
+            bindContentCountEvents();
+            // 绑定图片上传事件
+            bindPhotoUploadEvents();
+        });
+
+        // 加载植物选项
+        function loadPlantOptions() {
+            // 模拟植物数据
+            const plants = [
+                { id: 1, name: '龟背竹' },
+                { id: 2, name: '绿萝' },
+                { id: 3, name: '多肉' }
+            ];
+
+            const selectElements = [
+                document.getElementById('diaryPlantFilter'),
+                document.getElementById('diaryPlantId'),
+                document.getElementById('editDiaryPlantId')
+            ];
+
+            selectElements.forEach(select => {
+                if (!select) return;
+                
+                plants.forEach(plant => {
+                    const option = document.createElement('option');
+                    option.value = plant.id;
+                    option.textContent = plant.name;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        // 绑定筛选事件
+        function bindFilterEvents() {
+            // 植物筛选
+            const plantFilter = document.getElementById('diaryPlantFilter');
+            plantFilter?.addEventListener('change', (e) => {
+                // 筛选逻辑实现
+                console.log('筛选植物:', e.target.value);
+            });
+
+            // 类型筛选
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 切换按钮样式
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    btn.classList.add('active');
+                    
+                    // 筛选逻辑实现
+                    console.log('筛选类型:', btn.textContent);
+                });
+            });
+        }
+
+        // 绑定内容计数事件
+        function bindContentCountEvents() {
+            // 添加日记内容计数
+            const contentTextarea = document.getElementById('diaryContent');
+            const contentCount = document.getElementById('contentCount');
+            
+            contentTextarea?.addEventListener('input', (e) => {
+                const length = e.target.value.length;
+                contentCount.textContent = length;
+            });
+
+            // 编辑日记内容计数
+            const editContentTextarea = document.getElementById('editDiaryContent');
+            const editContentCount = document.getElementById('editContentCount');
+            
+            editContentTextarea?.addEventListener('input', (e) => {
+                const length = e.target.value.length;
+                editContentCount.textContent = length;
+            });
+        }
+
+        // 绑定图片上传事件
+        function bindPhotoUploadEvents() {
+            // 添加日记图片上传
+            document.getElementById('addPhotoBtn').addEventListener('click', () => {
+                uploadPhoto('diaryPhotoContainer');
+            });
+
+            // 编辑日记图片上传
+            document.getElementById('editAddPhotoBtn').addEventListener('click', () => {
+                uploadPhoto('editDiaryPhotoContainer');
+            });
+        }
+
+        // 图片上传处理
+        function uploadPhoto(containerId) {
+            const container = document.getElementById(containerId);
+            const photoCount = container.querySelectorAll('.preview-img').length;
+            
+            if (photoCount >= 9) {
+                alert('最多只能上传9张图片');
+                return;
+            }
+
+            // 创建隐藏的文件输入
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (res) => {
+                    // 创建图片预览元素
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'preview-img';
+                    previewDiv.style.position = 'relative';
+                    
+                    previewDiv.innerHTML = `
+                        <img src="${res.target.result}" alt="预览图" class="preview-img">
+                        <span class="remove-photo" onclick="removePhoto(this)">&times;</span>
+                    `;
+                    
+                    // 添加到容器，放在上传按钮前面
+                    container.insertBefore(previewDiv, container.lastChild);
+                };
+                reader.readAsDataURL(file);
+            };
+            
+            fileInput.click();
+        }
+
+        // 移除图片
+        function removePhoto(element) {
+            const previewDiv = element.parentElement;
+            previewDiv.remove();
+        }
+
+        // 显示添加日记弹窗
+        function showAddDiaryModal() {
+            document.getElementById('addDiaryModal').classList.add('show');
+            // 重置表单
+            document.getElementById('diaryContent').value = '';
+            document.getElementById('contentCount').textContent = '0';
+            // 清空图片预览
+            const photoContainer = document.getElementById('diaryPhotoContainer');
+            // 保留上传按钮，移除其他预览图
+            while (photoContainer.children.length > 1) {
+                photoContainer.removeChild(photoContainer.firstChild);
+            }
+        }
+
+        // 隐藏添加日记弹窗
+        function hideAddDiaryModal() {
+            document.getElementById('addDiaryModal').classList.remove('show');
+        }
+
+        // 显示编辑日记弹窗
+        function showEditDiaryModal() {
+            // 模拟填充数据
+            document.getElementById('editDiaryPlantId').value = 1;
+            document.getElementById('editDiaryActivityType').value = 'watering';
+            document.getElementById('editDiaryWeather').value = 'sunny';
+            document.getElementById('editDiaryTemperature').value = '6°C-15°C';
+            document.getElementById('editDiaryContent').value = '今天叶子变黄了一点。';
+            document.getElementById('editContentCount').textContent = '11';
+            
+            // 显示弹窗
+            document.getElementById('editDiaryModal').classList.add('show');
+        }
+
+        // 隐藏编辑日记弹窗
+        function hideEditDiaryModal() {
+            document.getElementById('editDiaryModal').classList.remove('show');
+        }
+
+        // 保存日记
+        function saveDiary() {
+            // 获取表单数据
+            const plantId = document.getElementById('diaryPlantId').value;
+            const content = document.getElementById('diaryContent').value;
+            
+            if (!plantId) {
+                alert('请选择植物');
+                return;
+            }
+            
+            if (!content) {
+                alert('请输入日记内容');
+                return;
+            }
+            
+            // 模拟保存成功
+            alert('日记保存成功！');
+            hideAddDiaryModal();
+            // 这里可以添加刷新日记列表的逻辑
+        }
+
+        // 更新日记
+        function updateDiary() {
+            // 获取表单数据
+            const content = document.getElementById('editDiaryContent').value;
+            
+            if (!content) {
+                alert('请输入日记内容');
+                return;
+            }
+            
+            // 模拟更新成功
+            alert('日记更新成功！');
+            hideEditDiaryModal();
+            // 这里可以添加刷新日记列表的逻辑
+        }
+
+        // 删除日记确认
+        function deleteDiaryConfirm() {
+            if (confirm('确定要删除这篇日记吗？')) {
+                // 模拟删除成功
+                alert('日记已删除');
+                // 这里可以添加刷新日记列表的逻辑
+            }
+        }
+    </script>
+</body>
+</html>

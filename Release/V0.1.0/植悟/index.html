@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植悟 - 首页</title>
+     <!-- 1. 新增：引入外部模拟数据文件不确定是不是放在这（路径需确保正确，基于根目录） -->
+  <script src="./mock/indexMockData.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#22c55e',
+                        secondary: '#f97316',
+                        neutral: '#fdf5e6',
+                        dark: '#1f2937'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-neutral min-h-screen">
+    <!-- 头部区域 -->
+    <div class="header pt-6 pb-4 px-5">
+        <div class="flex items-center">
+            <h1 class="text-2xl font-bold text-dark">我的花园</h1>
+            <div class="decor-img ml-auto w-36 h-20 bg-[url('assets/images/太阳&植物.png')] bg-contain bg-no-repeat bg-right"></div>
+        </div>
+    </div>
+
+    <!-- 智慧提醒卡片 -->
+    <div class="reminder-card bg-[#5b8c5a] rounded-xl p-5 mx-5 mb-5">
+        <h2 class="text-white text-lg font-semibold mb-4">智慧提醒</h2>
+        <div class="reminder-item bg-[#d1e7d0] rounded-lg p-3 mb-3 flex justify-between items-center">
+            <p class="text-sm text-dark">您已经有15天没给多肉浇水啦，今日最低温度为7℃，适合给多肉浇水</p>
+            <div class="check checked w-5 h-5 rounded-full bg-[#4CAF50] text-white flex items-center justify-content-center" onclick="markAsDone(this)">✓</div>
+        </div>
+        <div class="reminder-item bg-[#d1e7d0] rounded-lg p-3 mb-3 flex justify-between items-center">
+            <p class="text-sm text-dark">满天星："我的叶子都举累了，好想咕嘟咕嘟喝一杯营养剂，让我重新变得元气满满！"</p>
+            <div class="check w-5 h-5 rounded-full bg-white flex items-center justify-content-center" onclick="markAsDone(this)"></div>
+        </div>
+        <div class="reminder-item bg-[#d1e7d0] rounded-lg p-3 flex justify-between items-center">
+            <p class="text-sm text-dark">近日天气寒冷，适合将植物放在温暖、光照充足且通风良好的位置</p>
+            <div class="check w-5 h-5 rounded-full bg-white flex items-center justify-content-center" onclick="markAsDone(this)"></div>
+        </div>
+    </div>
+
+    <!-- 位置按钮 -->
+    <div class="location-buttons flex gap-3 mx-5 mb-5">
+        <button class="px-5 py-2 bg-[#8cb38a] text-white rounded-full text-sm hover:bg-[#7aa578] transition-colors" onclick="filterByLocation('阳台')">阳台</button>
+        <button class="px-5 py-2 bg-[#8cb38a] text-white rounded-full text-sm hover:bg-[#7aa578] transition-colors" onclick="filterByLocation('书房')">书房</button>
+        <button class="px-5 py-2 bg-[#8cb38a] text-white rounded-full text-sm hover:bg-[#7aa578] transition-colors" onclick="filterByLocation('公司')">公司</button>
+    </div>
+
+    <!-- 植物列表 -->
+    <div class="plant-list grid grid-cols-2 gap-5 mx-5 mb-24">
+        <div class="plant-card bg-white rounded-xl p-4 flex flex-col items-center hover:shadow-md transition-shadow" onclick="viewPlantDetail('龟背竹')">
+            <img src="assets/images/用户数据植物.png" alt="龟背竹" class="w-full h-36 object-contain rounded-lg mb-3">
+            <h3 class="text-base font-medium text-dark mb-1">龟背竹</h3>
+            <p class="text-sm text-gray-600">距离下次浇水还有：2天</p>
+        </div>
+        <div class="plant-card bg-white rounded-xl p-4 flex flex-col items-center hover:shadow-md transition-shadow" onclick="viewPlantDetail('万年青')">
+            <img src="assets/images/背景一：红日.png" alt="万年青" class="w-full h-36 object-contain rounded-lg mb-3">
+            <h3 class="text-base font-medium text-dark mb-1">万年青</h3>
+            <p class="text-sm text-gray-600">距离下次浇水还有：4天</p>
+        </div>
+        <div class="plant-card bg-white rounded-xl p-4 flex flex-col items-center hover:shadow-md transition-shadow" onclick="viewPlantDetail('植物名称')">
+            <img src="assets/images/用户数据植物.png" alt="植物" class="w-full h-36 object-contain rounded-lg mb-3">
+            <h3 class="text-base font-medium text-dark mb-1">植物名称</h3>
+            <p class="text-sm text-gray-600">距离下次浇水还有：X天</p>
+        </div>
+        <div class="plant-card bg-white rounded-xl p-4 flex flex-col items-center hover:shadow-md transition-shadow" onclick="viewPlantDetail('植物名称')">
+            <img src="assets/images/背景一：红日.png" alt="植物" class="w-full h-36 object-contain rounded-lg mb-3">
+            <h3 class="text-base font-medium text-dark mb-1">植物名称</h3>
+            <p class="text-sm text-gray-600">距离下次浇水还有：X天</p>
+        </div>
+    </div>
+
+    <!-- 添加按钮 -->
+    <button class="add-btn fixed bottom-20 right-5 w-14 h-14 rounded-full bg-[#4CAF50] text-white text-2xl flex items-center justify-center hover:bg-[#45a049] transition-colors shadow-lg" onclick="window.location.href='my-plants.html'">+</button>
+
+    <!-- 导航栏 -->
+    <!-- 导航栏 -->
+<div class="nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+    <a href="index.html" class="nav-item active"><i class="fas fa-home nav-icon"></i>首页</a>
+    <a href="ai-assistant.html" class="nav-item"><i class="fas fa-comments nav-icon"></i>ai助手</a>
+    <a href="diary.html" class="nav-item"><i class="fas fa-seedling nav-icon"></i>植物</a>
+    <a href="profile.html" class="nav-item"><i class="fas fa-user nav-icon"></i>我的</a>
+</div>
+
+<style>
+    .nav {
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+    }
+    .nav-item {
+        text-decoration: none;
+        color: #666;
+        font-size: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .nav-item.active {
+        color: #81c784;
+    }
+    .nav-icon {
+        font-size: 20px;
+        margin-bottom: 5px;
+    }
+</style>
+
+    <script>
+        // 显示当前日期
+        const today = new Date();
+        const dateStr = today.getFullYear() + '年' + (today.getMonth() + 1) + '月' + today.getDate() + '日';
+        
+        // 标记提醒为已完成
+        function markAsDone(element) {
+            if (!element.classList.contains('checked')) {
+                element.classList.add('checked');
+                element.style.backgroundColor = '#4CAF50';
+                element.innerHTML = '✓';
+                element.parentElement.classList.add('opacity-70');
+            }
+        }
+        
+        // 按位置筛选植物
+        function filterByLocation(location) {
+            // 这里可以添加筛选逻辑
+            console.log('筛选位置:', location);
+            // 高亮选中的按钮
+            const buttons = document.querySelectorAll('.location-buttons button');
+            buttons.forEach(btn => {
+                if (btn.textContent.trim() === location) {
+                    btn.classList.add('bg-[#7aa578]');
+                } else {
+                    btn.classList.remove('bg-[#7aa578]');
+                }
+            });
+        }
+        
+        // 查看植物详情
+        function viewPlantDetail(plantName) {
+            window.location.href = `plant-detail.html?name=${encodeURIComponent(plantName)}`;
+        }
+        
+        // 打开添加植物模态框
+        function openAddPlantModal() {
+            window.location.href = 'add-plant.html';
+        }
+        
+        // 初始化导航栏状态
+        document.addEventListener('DOMContentLoaded', function() {
+            // 标记当前页面的导航项为活跃状态
+            const currentPath = window.location.pathname.split('/').pop();
+            const navLinks = document.querySelectorAll('.nav-bar a');
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                    link.classList.remove('text-gray-600');
+                    link.classList.add('text-dark');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
