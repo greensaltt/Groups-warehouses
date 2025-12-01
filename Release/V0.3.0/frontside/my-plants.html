@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植悟 - 我的植物</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 保持原有样式不变 */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
+        body { background-color: #fdf5e6; padding-bottom: 70px; }
+        .header { display: flex; align-items: center; padding: 16px; background: linear-gradient(to right, #fff, #f8d7ad); position: fixed; top: 0; left: 0; right: 0; z-index: 10; }
+        .back-arrow { width: 24px; height: 24px; margin-right: 16px; cursor: pointer; color: #666; }
+        .search-box { display: flex; align-items: center; flex: 1; background-color: #fff; border-radius: 24px; padding: 8px 16px; position: relative; }
+        .search-icon { width: 20px; height: 20px; margin-right: 8px; color: #666; }
+        .search-input { border: none; outline: none; width: 100%; font-size: 14px; }
+        .clear-search { width: 18px; height: 18px; color: #999; cursor: pointer; margin-left: 8px; display: none; }
+        .section { padding: 16px; margin-top: 72px; }
+        .section-title { font-size: 18px; font-weight: bold; margin-bottom: 16px; color: #333; }
+        .my-plants, .popular-plants { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .plant-card { background-color: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .plant-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .add-plant { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 0; cursor: pointer; }
+        .add-icon { width: 40px; height: 40px; margin-bottom: 8px; color: #999; }
+        .add-text { font-size: 14px; color: #999; }
+        .plant-info { padding: 12px; }
+        .plant-name { font-size: 16px; font-weight: bold; margin-bottom: 4px; color: #333; }
+        .watering-tip { font-size: 12px; color: #666; }
+        .plant-img, .popular-plant-img { width: 100%; height: 120px; object-fit: cover; }
+        .edit-btn { position: absolute; top: 8px; right: 8px; background-color: rgba(255,255,255,0.8); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #666; cursor: pointer; transition: color 0.3s; z-index: 5; }
+        .edit-btn:hover { color: #4CAF50; }
+        .popular-plant-img { height: 100px; }
+        .popular-plant-name { text-align: center; padding: 8px; font-size: 14px; font-weight: bold; color: #333; background-color: #fff; }
+        .nav { display: flex; justify-content: space-around; padding: 10px 0; background-color: #fff; border-top: 1px solid #e5e7eb; position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; }
+        .nav-item { text-decoration: none; color: #666; font-size: 14px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item.active { color: #81c784; }
+        .nav-icon { font-size: 20px; margin-bottom: 5px; }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; display: none; }
+        .modal-content { width: 100%; max-width: 400px; background-color: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 20px; max-height: 85vh; overflow-y: auto; } /* 增加了高度限制和滚动 */
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-title { font-size: 18px; font-weight: bold; color: #333; }
+        .close-btn { color: #999; font-size: 20px; cursor: pointer; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 14px; font-weight: medium; color: #333; margin-bottom: 6px; }
+        .form-input, .form-select { width: 100%; border: 1px solid #eee; border-radius: 8px; padding: 10px; font-size: 14px; outline: none; transition: border-color 0.3s; }
+        .form-input:focus, .form-select:focus { border-color: #4CAF50; }
+        .photo-upload { display: flex; gap: 12px; margin-top: 8px; }
+        .upload-item { width: 100px; height: 100px; border: 2px dashed #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; cursor: pointer; transition: border-color 0.3s; overflow: hidden; position: relative; }
+        .upload-item img { width: 100%; height: 100%; object-fit: cover; }
+        .upload-item:hover { border-color: #4CAF50; }
+        .btn { width: 100%; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background-color 0.3s; border: none; }
+        .btn-primary { background-color: #4CAF50; color: #fff; }
+        .btn-primary:hover { background-color: #3d9940; }
+        .btn-secondary { background-color: #f5f5f5; color: #333; }
+        .btn-secondary:hover { background-color: #eee; }
+        .btn-group { display: flex; gap: 12px; }
+        .required { color: #ff4d4f; }
+        .hidden { display: none; }
+        /* 详情样式 */
+        .plant-detail-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 16px; }
+        .plant-detail-info { text-align: center; margin-bottom: 20px; }
+        .plant-detail-name { font-size: 20px; font-weight: bold; margin-bottom: 8px; color: #333; }
+        .plant-detail-species, .plant-detail-date { font-size: 14px; color: #666; margin-bottom: 4px; }
+        .search-highlight { background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; }
+        .no-results { grid-column: 1 / -1; text-align: center; padding: 20px; color: #999; }
+        /* 新增：两列布局工具类 */
+        .grid-2-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 (保持不变) -->
+    <div class="header">
+        <svg class="back-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onclick="window.location.href='index.html'">
+            <path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="#666"/>
+        </svg>
+        <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15.5 14H14.71L14.17 13.46C15.24 12.16 15.5 10.59 15.5 9C15.5 5.13 12.37 2 8.5 2C4.63 2 1.5 5.13 1.5 9C1.5 12.87 4.63 16 8.5 16C10.09 16 11.63 15.66 12.82 15.04L13.36 15.59C12.06 16.66 10.47 17.24 8.5 17.24C6.56 17.24 4.84 16.86 3.45 16.14C1.97 15.34 0.86 14.02 0.86 12.22C0.86 10.42 1.97 9.1 3.45 8.3C4.84 7.58 6.56 7.2 8.5 7.2C10.47 7.2 12.06 7.78 13.36 8.85L12.82 9.4C11.63 8.78 10.09 8.44 8.5 8.44C6.91 8.44 5.37 8.8 4.18 9.42C3.0 10.04 2.17 11.04 1.83 12.22C1.49 13.4 2.02 14.84 3.17 15.84C4.32 16.84 5.76 17.37 7.04 17.37C8.32 17.37 9.76 16.84 10.91 15.84L15.5 11.26V14Z" fill="#666"/>
+            </svg>
+            <input type="text" class="search-input" id="searchInput" placeholder="搜索植物">
+            <svg class="clear-search" id="clearSearch" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z" fill="currentColor"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="section">
+        <!-- 我的植物区域 -->
+        <div>
+            <h2 class="section-title">我的植物</h2>
+            <div class="my-plants" id="plantList">
+                <div class="plant-card add-plant" onclick="showAddPlantModal()">
+                    <svg class="add-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 7H11V11H7V13H11V17H13V13H17V11H13V7Z" fill="#999"/>
+                    </svg>
+                    <div class="add-text">添加植物</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 热门植物区域 (保持不变) -->
+        <div style="margin-top: 32px;">
+            <h2 class="section-title">热门植物</h2>
+            <div class="popular-plants" id="popularPlants">
+                <!-- 静态内容 -->
+                <div class="plant-card" data-plant="succulent" onclick="showPopularPlantDetail('succulent')">
+                    <img src="https://picsum.photos/seed/succulent/200/100" alt="多肉" class="popular-plant-img">
+                    <div class="popular-plant-name">多肉</div>
+                </div>
+                <div class="plant-card" data-plant="pothos" onclick="showPopularPlantDetail('pothos')">
+                    <img src="https://picsum.photos/seed/pothos/200/100" alt="绿萝" class="popular-plant-img">
+                    <div class="popular-plant-name">绿萝</div>
+                </div>
+                <div class="plant-card" data-plant="rose" onclick="showPopularPlantDetail('rose')">
+                    <img src="https://picsum.photos/seed/rose/200/100" alt="玫瑰" class="popular-plant-img">
+                    <div class="popular-plant-name">玫瑰</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 添加植物弹窗 (修改部分) -->
+    <div class="modal" id="addPlantModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">添加新植物</h2>
+                <svg class="close-btn" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onclick="hideAddPlantModal()">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z" fill="#999"/>
+                </svg>
+            </div>
+            <form id="addPlantForm" class="space-y-4">
+                <!-- 1. 基础信息 -->
+                <div class="form-group">
+                    <label class="form-label">植物昵称 <span class="required">*</span></label>
+                    <input type="text" id="plantNickname" required class="form-input" placeholder="例如：客厅的大发财树">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">植物品种 <span class="required">*</span></label>
+                    <select id="plantSpecies" required class="form-select">
+                        <option value="多肉">多肉植物</option>
+                        <option value="绿萝">绿萝</option>
+                        <option value="发财树">发财树</option>
+                        <option value="龟背竹">龟背竹</option>
+                        <option value="虎皮兰">虎皮兰</option>
+                        <option value="其他">其他品种</option>
+                    </select>
+                </div>
+
+                <!-- 2. 浇水设置 (使用 grid-2-cols 排列) -->
+                <div class="grid-2-cols">
+                    <div class="form-group">
+                        <label class="form-label">上次浇水 <span class="required">*</span></label>
+                        <input type="date" id="lastWatered" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">浇水周期(天) <span class="required">*</span></label>
+                        <input type="number" id="waterCycle" value="7" min="1" class="form-input">
+                    </div>
+                </div>
+
+                <!-- 3. 施肥设置 (可选) -->
+                <div class="grid-2-cols">
+                    <div class="form-group">
+                        <label class="form-label">上次施肥 <span class="text-gray-400 text-xs">(可选)</span></label>
+                        <input type="date" id="lastFertilized" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">施肥周期(天)</label>
+                        <input type="number" id="fertilizeCycle" value="30" min="1" class="form-input">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">保存植物档案</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 植物详情弹窗 (保持不变) -->
+    <div class="modal plant-detail-modal" id="plantDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">植物详情</h2>
+                <svg class="close-btn" onclick="hidePlantDetailModal()" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z" fill="#999"/>
+                </svg>
+            </div>
+            <div id="plantDetailContent"></div>
+        </div>
+    </div>
+
+    <!-- 热门植物详情弹窗 (保持不变) -->
+    <div class="modal popular-plant-detail-modal" id="popularPlantDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">植物百科</h2>
+                <svg class="close-btn" onclick="hidePopularPlantDetailModal()" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z" fill="#999"/>
+                </svg>
+            </div>
+            <div id="popularPlantDetailContent"></div>
+            <div class="btn-group" style="margin-top: 20px;">
+                <button type="button" class="btn btn-primary" onclick="addThisPlant()">添加此植物</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="nav">
+        <a href="index.html" class="nav-item"><i class="fas fa-home nav-icon"></i>首页</a>
+        <a href="ai-assistant.html" class="nav-item"><i class="fas fa-comments nav-icon"></i>ai助手</a>
+        <a href="diary.html" class="nav-item active"><i class="fas fa-seedling nav-icon"></i>植物</a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user nav-icon"></i>我的</a>
+    </div>
+
+    <script>
+        // ============================================
+        //  后端 API 配置
+        // ============================================
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+
+        // 检查登录状态
+        function getAuthHeaders() {
+            const token = localStorage.getItem('zhiwu_token');
+            if (!token) {
+                alert('请先登录');
+                window.location.href = 'login.html';
+                return null;
+            }
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        // 全局变量
+        let userPlantsCache = [];
+        let currentPopularPlant = null;
+
+        // 热门植物数据
+        const popularPlantsData = {
+            'succulent': { name: '多肉', description: '适合新手，少浇水，多晒太阳。', careTips: '干透浇透，宁干勿湿。' },
+            'pothos': { name: '绿萝', description: '遇水即活，净化空气小能手。', careTips: '喜阴，保持土壤湿润。' },
+            'rose': { name: '玫瑰', description: '需要充足光照，象征爱情。', careTips: '勤施肥，多修剪。' }
+        };
+
+        // ============================================
+        //  核心逻辑：与后端交互
+        // ============================================
+
+        // 1. 获取植物列表
+        async function fetchPlants() {
+            const headers = getAuthHeaders();
+            if (!headers) return;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/get_plants`, { headers });
+                const data = await res.json();
+
+                if (data.code === 200) {
+                    userPlantsCache = data.data;
+                    renderPlantList(userPlantsCache);
+                }
+            } catch (err) {
+                console.error("加载植物失败", err);
+            }
+        }
+
+        // 2. 添加植物 (Create)
+        async function createPlant(plantData) {
+            const headers = getAuthHeaders();
+            if (!headers) return;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/plants`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(plantData)
+                });
+                const data = await res.json();
+
+                if (data.code === 200) {
+                    alert('植物添加成功！');
+                    hideAddPlantModal();
+                    fetchPlants(); // 刷新列表
+                } else {
+                    alert('添加失败: ' + (data.msg || '未知错误'));
+                }
+            } catch (err) {
+                alert('网络错误，请检查后端服务');
+            }
+        }
+
+        // ============================================
+        //  渲染逻辑
+        // ============================================
+
+        function renderPlantList(plants) {
+            const plantList = document.getElementById('plantList');
+            // 保留第一个“添加按钮”
+            const addCardHtml = `
+                <div class="plant-card add-plant" onclick="showAddPlantModal()">
+                    <svg class="add-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 7H11V11H7V13H11V17H13V13H17V11H13V7Z" fill="#999"/>
+                    </svg>
+                    <div class="add-text">添加植物</div>
+                </div>`;
+
+            // 生成植物卡片 HTML
+            const cardsHtml = plants.map(plant => {
+                const cycle = plant.water_cycle || 7;
+                const last = plant.last_watered ? new Date(plant.last_watered) : new Date();
+                const next = new Date(last);
+                next.setDate(last.getDate() + cycle);
+
+                const diffTime = next - new Date();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const tip = diffDays > 0 ? `${diffDays}天后浇水` : `需立即浇水`;
+
+                return `
+                <div class="plant-card" onclick="showPlantDetail(${plant.id})">
+                    <div class="plant-img bg-green-100 flex items-center justify-center text-4xl">
+                        ${plant.icon || '🌱'}
+                    </div>
+                    <div class="plant-info">
+                        <div class="plant-name">${plant.nickname}</div>
+                        <div class="watering-tip text-green-600">${tip}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            plantList.innerHTML = addCardHtml + cardsHtml;
+        }
+
+        // ============================================
+        //  UI 交互事件
+        // ============================================
+
+        // 页面加载
+        window.addEventListener('load', () => {
+            fetchPlants();
+
+            // 初始化日期：默认选中今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('lastWatered').value = today;
+            // 施肥日期不默认，因为不一定施肥了
+        });
+
+        // 提交添加表单 (数据组装逻辑更新)
+        document.getElementById('addPlantForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // 获取表单数据
+            const nickname = document.getElementById('plantNickname').value;
+            const species = document.getElementById('plantSpecies').value;
+
+            // 浇水配置
+            const lastWatered = document.getElementById('lastWatered').value;
+            const waterCycle = document.getElementById('waterCycle').value;
+
+            // 施肥配置 (处理空值)
+            const lastFertilized = document.getElementById('lastFertilized').value;
+            const fertilizeCycle = document.getElementById('fertilizeCycle').value;
+
+            // 构造符合后端 PlantCreate Schema 的数据
+            const payload = {
+                nickname: nickname,
+                species: species,
+                // 确保数字是数字类型
+                water_cycle: parseInt(waterCycle) || 7,
+                fertilize_cycle: parseInt(fertilizeCycle) || 30,
+
+                // 日期如果是空字符串，传 null 给后端 (如果后端支持) 或不传
+                last_watered: lastWatered || null,
+                last_fertilized: lastFertilized || null
+            };
+
+            createPlant(payload);
+        });
+
+        // 搜索功能
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase();
+            const filtered = userPlantsCache.filter(p =>
+                p.nickname.toLowerCase().includes(keyword) ||
+                p.species.toLowerCase().includes(keyword)
+            );
+            renderPlantList(filtered);
+            document.getElementById('clearSearch').style.display = keyword ? 'block' : 'none';
+        });
+
+        document.getElementById('clearSearch').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            renderPlantList(userPlantsCache);
+            document.getElementById('clearSearch').style.display = 'none';
+        });
+
+        // 弹窗控制
+        function showAddPlantModal() {
+            // 打开时重置一下日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            if(!document.getElementById('lastWatered').value) {
+                document.getElementById('lastWatered').value = today;
+            }
+            document.getElementById('addPlantModal').style.display = 'flex';
+        }
+        function hideAddPlantModal() { document.getElementById('addPlantModal').style.display = 'none'; }
+
+        function showPlantDetail(id) {
+            const plant = userPlantsCache.find(p => p.id === id);
+            if(!plant) return;
+
+            const content = document.getElementById('plantDetailContent');
+            content.innerHTML = `
+                <div class="plant-detail-img bg-green-100 flex items-center justify-center text-6xl">🌱</div>
+                <div class="plant-detail-info">
+                    <div class="plant-detail-name">${plant.nickname}</div>
+                    <div class="plant-detail-species">品种：${plant.species}</div>
+
+                    <div class="grid grid-cols-2 gap-4 mt-4 text-left px-4">
+                        <div>
+                            <p class="text-xs text-gray-500">上次浇水</p>
+                            <p class="text-sm font-medium">${plant.last_watered || '暂无'}</p>
+                            <p class="text-xs text-green-600 mt-1">周期: ${plant.water_cycle}天</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">上次施肥</p>
+                            <p class="text-sm font-medium">${plant.last_fertilized || '暂无'}</p>
+                            <p class="text-xs text-orange-600 mt-1">周期: ${plant.fertilize_cycle || 30}天</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('plantDetailModal').style.display = 'flex';
+        }
+        function hidePlantDetailModal() { document.getElementById('plantDetailModal').style.display = 'none'; }
+
+        // 热门植物相关
+        function showPopularPlantDetail(key) {
+            currentPopularPlant = popularPlantsData[key];
+            const content = document.getElementById('popularPlantDetailContent');
+            content.innerHTML = `
+                <div class="popular-plant-detail-info">
+                    <div class="popular-plant-detail-name text-xl font-bold mb-2">${currentPopularPlant.name}</div>
+                    <p class="text-sm text-gray-600 mb-2">${currentPopularPlant.description}</p>
+                    <p class="text-sm text-green-600">💡 养护贴士：${currentPopularPlant.careTips}</p>
+                </div>
+            `;
+            document.getElementById('popularPlantDetailModal').style.display = 'flex';
+        }
+        function hidePopularPlantDetailModal() { document.getElementById('popularPlantDetailModal').style.display = 'none'; }
+
+        function addThisPlant() {
+            if(currentPopularPlant) {
+                document.getElementById('plantSpecies').value = currentPopularPlant.name;
+                document.getElementById('plantNickname').value = currentPopularPlant.name + '01';
+                hidePopularPlantDetailModal();
+                showAddPlantModal();
+            }
+        }
+    </script>
+</body>
+</html>
