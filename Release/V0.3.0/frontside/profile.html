@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植悟 - 我的</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4caf50',
+                        secondary: '#f97316',
+                        neutral: '#fdf5eb',
+                        light: '#eef5d7',
+                        accent: '#f5d7a9'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-neutral min-h-screen pb-20">
+    <!-- 头部区域 -->
+    <div class="header relative py-5 px-4 bg-gradient-to-br from-[#f0e6b9] to-[#f5d7a9] overflow-hidden">
+        <h2 class="title text-2xl font-bold text-gray-800 mb-4 relative z-10">我的</h2>
+        <div class="user-card flex items-center gap-4 bg-white/80 p-4 rounded-lg shadow-md relative z-10">
+            <div class="relative">
+                <div class="avatar w-14 h-14 bg-primary/20 rounded-full flex items-center justify-center overflow-hidden" id="avatarContainer">
+                    <i class="bi bi-person text-primary text-2xl"></i>
+                </div>
+                <button class="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1 shadow-md hover:bg-primary/90 transition-colors" id="changeAvatarBtn">
+                    <i class="bi bi-pencil text-xs"></i>
+                </button>
+                <input type="file" id="avatarUpload" accept="image/*" class="hidden">
+            </div>
+            <div class="user-info flex-1">
+                <h3 class="text-lg font-semibold text-gray-800" id="userNickname">植物爱好者</h3>
+                <p class="text-sm text-gray-600" id="userPhone">ID: 123456</p>
+            </div>
+            <div class="card-corner flex gap-2">
+                <div class="corner-dot w-3 h-3 rounded-full bg-white/70"></div>
+                <div class="corner-dot w-3 h-3 rounded-full bg-white/70"></div>
+                <div class="corner-dot w-3 h-3 rounded-full bg-white/70"></div>
+            </div>
+        </div>
+        <!-- 装饰元素 -->
+        <div class="absolute -top-20 -right-20 w-60 h-60 bg-[#f8b78b]/20 rounded-full"></div>
+    </div>
+
+    <!-- 统计数据 -->
+    <div class="stats flex justify-around py-4 bg-light">
+        <div class="stat-item text-center">
+            <div class="number text-2xl font-bold text-gray-800" id="plantCount">0</div>
+            <div class="label text-sm text-gray-600 mt-1">我的植物</div>
+        </div>
+        <div class="stat-item text-center">
+            <div class="number text-2xl font-bold text-gray-800" id="diaryCount">0</div>
+            <div class="label text-sm text-gray-600 mt-1">养护记录</div>
+        </div>
+        <div class="stat-item text-center">
+            <div class="number text-2xl font-bold text-gray-800" id="careCount">0</div>
+            <div class="label text-sm text-gray-600 mt-1">养护天数</div>
+        </div>
+    </div>
+
+    <!-- 功能菜单 -->
+    <div class="menu mx-4 my-4 bg-white rounded-lg shadow-md overflow-hidden">
+        <!-- 养护记录 -->
+        <div class="menu-section p-4 border-b border-gray-100">
+            <h4 class="text-base font-medium text-gray-800 mb-3 inline-block relative">
+                养护记录
+                <span class="absolute bottom-0 left-0 w-14 h-0.5 bg-primary"></span>
+            </h4>
+            <!--11.24 养护记录图片区域修改：添加data-record-id和cursor-pointer -->
+            <div class="record-grid flex gap-3 overflow-x-auto pb-2">
+                <div class="record-item w-24 flex-shrink-0 rounded-lg overflow-hidden shadow-sm cursor-pointer" data-record-id="1">
+                    <img src="https://picsum.photos/200/200?random=1" alt="植物养护记录" class="w-full h-24 object-cover">
+                </div>
+                <div class="record-item w-24 flex-shrink-0 rounded-lg overflow-hidden shadow-sm cursor-pointer" data-record-id="2">
+                    <img src="https://picsum.photos/200/200?random=2" alt="植物养护记录" class="w-full h-24 object-cover">
+                </div>
+                <div class="record-item w-24 flex-shrink-0 rounded-lg overflow-hidden shadow-sm cursor-pointer" data-record-id="3">
+                    <img src="https://picsum.photos/200/200?random=3" alt="植物养护记录" class="w-full h-24 object-cover">
+                </div>
+            </div>
+        </div>
+
+        <!-- 个人资料 -->
+        <div class="menu-section p-4 border-b border-gray-100">
+            <a href="#" class="menu-link flex justify-between items-center text-gray-800 hover:text-primary transition-colors" id="editProfileLink">
+                <span>个人资料</span>
+                <i class="bi bi-chevron-right text-gray-400"></i>
+            </a>
+        </div>
+
+        <!-- 修改密码 -->
+        <div class="menu-section p-4 border-b border-gray-100">
+            <a href="#changePassword" class="menu-link flex justify-between items-center text-gray-800 hover:text-primary transition-colors">
+                <span>更改密码</span>
+                <i class="bi bi-chevron-right text-gray-400"></i>
+            </a>
+        </div>
+
+        <!-- 意见反馈 -->
+        <div class="menu-section p-4 border-b border-gray-100">
+            <a href="#feedback" class="menu-link flex justify-between items-center text-gray-800 hover:text-primary transition-colors">
+                <span>意见反馈</span>
+                <i class="bi bi-chevron-right text-gray-400"></i>
+            </a>
+        </div>
+
+        <!-- 关于我们 -->
+        <div class="menu-section p-4 border-b border-gray-100">
+            <a href="#about" class="menu-link flex justify-between items-center text-gray-800 hover:text-primary transition-colors">
+                <span>关于我们</span>
+                <i class="bi bi-chevron-right text-gray-400"></i>
+            </a>
+        </div>
+
+        <!-- 用户协议 -->
+        <div class="menu-section p-4 border-b border-gray-100">
+            <a href="#agreement" class="menu-link flex justify-between items-center text-gray-800 hover:text-primary transition-colors">
+                <span>用户协议与隐私政策</span>
+                <i class="bi bi-chevron-right text-gray-400"></i>
+            </a>
+        </div> 
+
+        <!-- 删除账号 -->
+        <div class="menu-section p-4">
+            <a href="#deleteAccount" class="menu-link delete-link flex justify-between items-center text-red-500 pt-2 mt-2 border-t border-dashed border-gray-200">
+                <span>删除账号</span>
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- 修改密码表单 -->
+    <div class="bg-white rounded-lg shadow-md p-4 mx-4 mb-4 hidden" id="changePasswordForm">
+        <h2 class="text-base font-semibold text-gray-800 mb-3">修改密码</h2>
+        <form id="passwordForm" class="space-y-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">原密码</label>
+                <input type="password" id="oldPassword" placeholder="请输入原密码" required
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition-colors">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">新密码</label>
+                <input type="password" id="newPassword" placeholder="请输入新密码（8位以上，含字母和数字）" required
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition-colors">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">确认新密码</label>
+                <input type="password" id="confirmNewPassword" placeholder="请再次输入新密码" required
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition-colors">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button type="button" class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors" id="cancelChangePwdBtn">
+                    取消
+                </button>
+                <button type="submit" class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                    保存修改
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 退出登录按钮 -->
+    <button class="w-full bg-white text-red-500 rounded-lg shadow-md py-3 font-medium hover:bg-red-50 transition-colors mx-4 mb-4" id="logoutBtn">
+        退出登录
+    </button>
+
+    <!-- 编辑资料弹窗 -->
+    <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden" id="editProfileModal">
+        <div class="w-full max-w-md bg-white rounded-lg shadow-xl p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-base font-semibold text-gray-800">编辑个人资料</h2>
+                <button onclick="hideEditProfileModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <form id="profileForm" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">昵称</label>
+                    <input type="text" id="editNickname" placeholder="请输入昵称" required
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">个性签名</label>
+                    <input type="text" id="editSignature" placeholder="请输入个性签名（不超过50字）" maxlength="50"
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition-colors">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors" onclick="hideEditProfileModal()">
+                        取消
+                    </button>
+                    <button type="submit" class="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                        保存修改
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+        <!-- 11.24新增：养护记录详情弹窗 -->
+        <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 hidden" id="recordDetailModal">
+            <div class="w-full max-w-md bg-white rounded-lg shadow-xl p-5 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-base font-semibold text-gray-800">养护记录详情</h2>
+                    <button onclick="hideRecordDetailModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="record-detail-content">
+                    <img id="recordDetailImage" src="" alt="养护记录图片" class="w-full h-48 object-cover rounded-lg mb-3">
+                    <div class="space-y-2">
+                        <p><span class="text-gray-500">植物名称：</span><span id="recordPlantName">加载中...</span></p>
+                        <p><span class="text-gray-500">养护类型：</span><span id="recordCareType">加载中...</span></p>
+                        <p><span class="text-gray-500">养护时间：</span><span id="recordTime">加载中...</span></p>
+                        <p><span class="text-gray-500">养护备注：</span><span id="recordNote">加载中...</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 新增：养护记录详情弹窗结束 -->
+
+    <!-- 底部导航 -->
+    <!-- 修改 -->
+   
+<div class="nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+    <a href="index.html" class="nav-item"><i class="fas fa-home nav-icon"></i>首页</a>
+    <a href="ai-assistant.html" class="nav-item"><i class="fas fa-comments nav-icon"></i>AI助手</a>
+    <a href="diary.html" class="nav-item"><i class="fas fa-seedling nav-icon"></i>日记</a>
+    <a href="profile.html" class="nav-item active"><i class="fas fa-user nav-icon"></i>我的</a>
+</div>
+
+<style>
+    .nav {
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+    }
+    .nav-item {
+        text-decoration: none;
+        color: #666;
+        font-size: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .nav-item.active {
+        color: #81c784;
+    }
+    .nav-icon {
+        font-size: 20px;
+        margin-bottom: 5px;
+    }
+</style>
+
+<script src="js/common.js"></script>
+<script src="js/auth.js"></script>
+<!-- 11.24新增：引入api.js（假设路径正确） -->
+<!--修改待定 <script type="module" src="js/api.js"></script> -->
+<script>
+    // 配置API基础URL
+    const API_BASE_URL = 'https://your-api-domain.com/api';//占位符，如果没有替换为实际的后端服务域名/后端服务器未启用，所有接口请求都会指向无效地址，会显示加载失败。
+
+    // 页面加载初始化
+    window.addEventListener('load', () => {
+        // 加载用户信息
+        loadUserInfo();
+
+        // 加载统计数据
+        loadStats();
+
+        // 绑定事件
+        bindEvents();
+    });
+
+    // 使用fetch封装API请求
+    async function apiRequest(endpoint, options = {}) {
+        try {
+            // 获取token（假设登录后存储在localStorage）
+            const token = localStorage.getItem('zhiwu_token');
+            
+            // 设置默认headers
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            
+            // 如果有token，添加认证头
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                method: 'GET', // 默认GET
+                ...options,
+                headers
+            });
+
+            if (!response.ok) {
+                throw new Error(`API请求失败: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API请求错误:', error);
+            alert('服务器请求失败，请稍后重试');
+            throw error; // 抛出错误让调用方处理
+        }
+    }
+
+    // 加载用户信息
+    async function loadUserInfo() {
+        try {
+            // 调用后端API获取用户信息
+            const response = await apiRequest('/user/profile');
+            const user = response.data || {};
+            
+            const nickname = user.nickname || '植物爱好者';
+            const phone = user.phone ? `ID: ${user.phone.replace(/(\d{6})(\d*)/, '$1****')}` : 'ID: 123456';
+            const avatar = user.avatar || '';
+
+            // 更新页面显示
+            document.getElementById('userNickname').textContent = nickname;
+            document.getElementById('userPhone').textContent = phone;
+            document.getElementById('editNickname').value = nickname;
+            document.getElementById('editSignature').value = user.signature || '';
+
+            // 更新头像
+            if (avatar) {
+                document.getElementById('avatarContainer').innerHTML = `<img src="${avatar}" alt="用户头像" class="w-full h-full object-cover">`;
+            }
+        } catch (error) {
+            console.error('加载用户信息失败:', error);
+            // 失败时使用本地缓存作为降级方案
+            const user = JSON.parse(localStorage.getItem('zhiwu_user')) || {};
+            document.getElementById('userNickname').textContent = user.nickname || '植物爱好者';
+        }
+    }
+
+    // 加载统计数据
+    async function loadStats() {
+        try {
+            // 调用后端API获取统计数据
+            const response = await apiRequest('/user/stats');
+            const stats = response.data || {};
+            
+            document.getElementById('plantCount').textContent = stats.plantCount || 0;
+            document.getElementById('diaryCount').textContent = stats.diaryCount || 0;
+            document.getElementById('careCount').textContent = stats.careDays || 0;
+        } catch (error) {
+            console.error('加载统计数据失败:', error);
+            // 降级使用模拟数据
+            document.getElementById('plantCount').textContent = 4;
+            document.getElementById('diaryCount').textContent = 3;
+            document.getElementById('careCount').textContent = 17;
+        }
+    }
+
+    // 绑定所有事件
+    function bindEvents() {
+        // 退出登录
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            if (confirm('确定要退出登录吗？')) {
+                try {
+                    // 调用后端退出登录API
+                    await apiRequest('/auth/logout', { method: 'POST' });
+                    logout(); // 清除本地数据的函数
+                } catch (error) {
+                    console.error('退出登录失败:', error);
+                    logout(); // 即使API失败也执行本地退出
+                }
+            }
+        });
+
+        // 更换头像
+        document.getElementById('changeAvatarBtn').addEventListener('click', () => {
+            document.getElementById('avatarUpload').click();
+        });
+
+        document.getElementById('avatarUpload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 创建FormData用于文件上传
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            try {
+                // 调用上传头像API
+                const response = await apiRequest('/user/avatar', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {} // 清空默认headers，让浏览器自动设置multipart/form-data
+                });
+
+                const avatarUrl = response.data.avatarUrl;
+                
+                // 更新头像显示
+                document.getElementById('avatarContainer').innerHTML = `<img src="${avatarUrl}" alt="用户头像" class="w-full h-full object-cover">`;
+                alert('头像更换成功！');
+            } catch (error) {
+                console.error('上传头像失败:', error);
+            }
+        });
+
+        // 编辑资料
+        document.getElementById('editProfileLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('editProfileModal').classList.remove('hidden');
+        });
+
+        // 提交编辑资料表单
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nickname = document.getElementById('editNickname').value.trim();
+            const signature = document.getElementById('editSignature').value.trim();
+
+            if (!nickname) {
+                alert('请输入昵称');
+                return;
+            }
+
+            try {
+                // 调用更新用户资料API
+                await apiRequest('/user/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify({ nickname, signature })
+                });
+
+                // 更新页面显示
+                document.getElementById('userNickname').textContent = nickname;
+
+                hideEditProfileModal();
+                alert('资料修改成功！');
+            } catch (error) {
+                console.error('更新资料失败:', error);
+            }
+        });
+
+        // 隐藏编辑资料弹窗
+        window.hideEditProfileModal = function() {
+            document.getElementById('editProfileModal').classList.add('hidden');
+        };
+
+        // 修改密码相关
+        document.querySelector('a[href="#changePassword"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('changePasswordForm').classList.remove('hidden');
+            document.getElementById('changePasswordForm').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        document.getElementById('cancelChangePwdBtn').addEventListener('click', () => {
+            document.getElementById('changePasswordForm').classList.add('hidden');
+            document.getElementById('passwordForm').reset();
+        });
+
+        // 提交修改密码表单
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const oldPwd = document.getElementById('oldPassword').value.trim();
+            const newPwd = document.getElementById('newPassword').value.trim();
+            const confirmPwd = document.getElementById('confirmNewPassword').value.trim();
+
+            // 前端验证
+            if (newPwd.length < 8) {
+                alert('新密码长度不能少于8位');
+                return;
+            }
+
+            if (!/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(newPwd)) {
+                alert('新密码需同时包含字母和数字');
+                return;
+            }
+
+            if (newPwd !== confirmPwd) {
+                alert('两次密码输入不一致');
+                return;
+            }
+
+            if (newPwd === oldPwd) {
+                alert('新密码不能与原密码相同');
+                return;
+            }
+
+            try {
+                // 调用修改密码API
+                await apiRequest('/user/password', {
+                    method: 'PUT',
+                    body: JSON.stringify({ oldPassword: oldPwd, newPassword: newPwd })
+                });
+
+                alert('密码修改成功！请重新登录');
+                logout();
+            } catch (error) {
+                console.error('修改密码失败:', error);
+                alert('原密码错误或修改失败');
+            }
+        });
+
+        // 其他事件绑定
+        document.querySelector('a[href="#deleteAccount"]').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (confirm('确定要删除账号吗？此操作不可恢复！')) {
+                try {
+                    await apiRequest('/user/delete', { method: 'DELETE' });
+                    alert('账号删除成功');
+                    logout();
+                } catch (error) {
+                    alert('账号删除功能将在后续版本开放');
+                }
+            }
+        });
+
+        // 其他菜单点击事件
+        document.querySelector('a[href="#feedback"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('意见反馈功能即将上线，敬请期待～');
+        });
+
+        document.querySelector('a[href="#about"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('关于植悟：\n一款专注于植物智能养护的工具，让养花变得简单有趣～\n版本号：V1.0.0');
+        });
+
+        document.querySelector('a[href="#agreement"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('用户协议与隐私政策：\n我们将严格保护你的个人信息和植物数据，仅用于提供养护服务～');
+        });
+        // 11.24 11.00新增：养护记录相关事件绑定
+        // 显示养护记录详情弹窗
+        window.showRecordDetailModal = function() {
+            document.getElementById('recordDetailModal').classList.remove('hidden');
+        }
+
+        // 隐藏养护记录详情弹窗
+        window.hideRecordDetailModal = function() {
+            document.getElementById('recordDetailModal').classList.add('hidden');
+        }
+
+        // 获取养护记录详情
+        async function getCareRecordDetail(recordId) {
+            try {
+                // 调用后端API获取记录详情（使用api.js中的API）
+                const response = await window.API.getCareRecordDetail({ recordId });
+                return response.data || getMockRecordData(recordId);
+            } catch (error) {
+                console.error('获取养护记录失败:', error);
+                // 失败时使用模拟数据
+                return getMockRecordData(recordId);
+            }
+        }
+
+        // 模拟养护记录数据
+        function getMockRecordData(recordId) {
+            // 不同ID返回不同的模拟数据
+            const mockData = {
+                1: {
+                    id: '1',
+                    imageUrl: 'https://picsum.photos/200/200?random=1',
+                    plantName: '绿萝',
+                    careType: '浇水',
+                    time: '2024-05-15 09:30',
+                    note: '今天给绿萝浇了适量的水，放在散射光处养护'
+                },
+                2: {
+                    id: '2',
+                    imageUrl: 'https://picsum.photos/200/200?random=2',
+                    plantName: '多肉植物',
+                    careType: '晒太阳',
+                    time: '2024-05-12 14:20',
+                    note: '给多肉晒了2小时太阳，状态很好'
+                },
+                3: {
+                    id: '3',
+                    imageUrl: 'https://picsum.photos/200/200?random=3',
+                    plantName: '发财树',
+                    careType: '施肥',
+                    time: '2024-05-10 16:40',
+                    note: '施加了少量有机肥，促进生长'
+                }
+            };
+            return mockData[recordId] || mockData[1];
+        }
+
+        // 养护记录点击事件
+        document.querySelectorAll('.record-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const recordId = item.getAttribute('data-record-id');
+                const recordData = await getCareRecordDetail(recordId);
+                
+                // 更新弹窗内容
+                document.getElementById('recordDetailImage').src = recordData.imageUrl;
+                document.getElementById('recordPlantName').textContent = recordData.plantName;
+                document.getElementById('recordCareType').textContent = recordData.careType;
+                document.getElementById('recordTime').textContent = recordData.time;
+                document.getElementById('recordNote').textContent = recordData.note || '无备注';
+                
+                // 显示弹窗
+                showRecordDetailModal();
+            });
+        });
+        // 新增：养护记录相关事件绑定结束
+    }
+</script>
+</body>
+</html>
