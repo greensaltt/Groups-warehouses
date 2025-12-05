@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植悟 - AI养护助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2E7D32',
+                        secondary: '#81C784',
+                        neutral: '#F1F8E9',
+                        dark: '#1B5E20',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .chat-bubble-ai {
+            background-color: #FFFFFF;
+            border: 1px solid #E8F5E9;
+            border-radius: 18px 18px 18px 0;
+            padding: 12px 16px;
+            max-width: 80%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .chat-bubble-user {
+            background-color: #81C784;
+            color: #FFFFFF;
+            border-radius: 18px 18px 0 18px;
+            padding: 12px 16px;
+            max-width: 80%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F8E9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #C8E6C9;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #81C784;
+        }
+        /* 底部导航样式 */
+        .nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: white;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-top: 1px solid #eee;
+            z-index: 1000;
+        }
+        .nav-item {
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .nav-item.active {
+            color: #81c784;
+        }
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body class="bg-neutral min-h-screen">
+    <!-- 顶部导航 -->
+    <nav class="bg-primary text-white shadow-md fixed top-0 left-0 right-0 z-10">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="index.html" class="hover:text-secondary transition-colors">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </a>
+            <h1 class="text-xl font-bold flex items-center">
+                <i class="fas fa-leaf mr-2"></i> 植物养护助手
+            </h1>
+            <div class="w-8"></div> <!-- 占位，保持导航对称 -->
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 pt-20 pb-24 flex flex-col md:flex-row gap-6">
+        <!-- 左侧：历史对话 + 知识库（电脑端显示，手机端隐藏） -->
+        <div class="hidden md:block w-full md:w-64 lg:w-72 shrink-0">
+            <!-- 历史对话 -->
+            <div class="bg-white rounded-2xl shadow-md p-4 mb-6">
+                <h2 class="text-lg font-semibold text-dark mb-4 flex items-center">
+                    <i class="fas fa-clock text-primary mr-2"></i> 历史对话
+                </h2>
+                <div class="space-y-3" id="historyConversations">
+                    <div class="text-center text-sm text-gray-500 py-4">
+                        暂无历史对话
+                    </div>
+                </div>
+            </div>
+
+            <!-- 知识库搜索 -->
+            <div class="bg-white rounded-2xl shadow-md p-4">
+                <h2 class="text-lg font-semibold text-dark mb-4 flex items-center">
+                    <i class="fas fa-book text-primary mr-2"></i> 养护知识库
+                </h2>
+                <div class="relative mb-4">
+                    <input type="text" id="knowledgeSearch" placeholder="搜索养护知识..."
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 pl-10 outline-none focus:border-primary transition-colors">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <div class="space-y-2 max-h-80 overflow-y-auto" id="knowledgeList">
+                    <!-- 知识库内容将通过JS动态加载 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：对话区域（占满剩余宽度） -->
+        <div class="w-full flex-1 flex flex-col">
+            <!-- 对话内容 -->
+            <div class="bg-white rounded-2xl shadow-md flex-1 overflow-hidden flex flex-col">
+                <div class="p-4 flex-1 overflow-y-auto" id="chatContent">
+                    <!-- 欢迎消息 -->
+                    <div class="flex mb-6">
+                        <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fas fa-robot text-primary"></i>
+                        </div>
+                        <div class="chat-bubble-ai">
+                            <p class="text-gray-800">
+                                你好呀！我是你的植物养护助手小植～ 有任何养护问题都可以问我哦！比如：
+                            </p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <button class="bg-neutral text-primary text-xs px-2 py-1 rounded-full hover:bg-secondary/20 transition-colors" onclick="sendSampleQuestion('多肉叶子发黄怎么办？')">
+                                    多肉叶子发黄怎么办？
+                                </button>
+                                <button class="bg-neutral text-primary text-xs px-2 py-1 rounded-full hover:bg-secondary/20 transition-colors" onclick="sendSampleQuestion('绿萝多久浇一次水？')">
+                                    绿萝多久浇一次水？
+                                </button>
+                                <button class="bg-neutral text-primary text-xs px-2 py-1 rounded-full hover:bg-secondary/20 transition-colors" onclick="sendSampleQuestion('室内植物需要晒太阳吗？')">
+                                    室内植物需要晒太阳吗？
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部：图片上传 + 输入框 -->
+                <div class="border-t border-gray-100 p-4">
+                    <div class="flex items-center mb-3">
+                        <button id="uploadImageBtn" class="text-gray-500 hover:text-primary transition-colors p-2">
+                            <i class="fas fa-image text-xl"></i>
+                        </button>
+                        <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                        <button id="selectPlantBtn" class="text-gray-500 hover:text-primary transition-colors p-2 ml-1">
+                            <i class="fas fa-leaf text-xl"></i>
+                        </button>
+                        <div class="ml-auto">
+                            <button id="clearChatBtn" class="text-gray-500 hover:text-red-500 transition-colors text-sm">
+                                新建对话
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="chatInput" placeholder="输入你的问题..."
+                            class="flex-1 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary transition-colors">
+                        <button id="sendBtn" class="bg-primary text-white rounded-lg px-4 hover:bg-dark transition-colors">
+                            发送
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 手机端：底部切换栏（电脑端隐藏） -->
+            <div class="md:hidden flex bg-white rounded-2xl shadow-md mt-4">
+                <button class="flex-1 py-3 text-center text-primary border-b-2 border-primary font-medium" id="mobileChatTab">
+                    对话
+                </button>
+                <button class="flex-1 py-3 text-center text-gray-500 font-medium" id="mobileKnowledgeTab">
+                    知识库
+                </button>
+            </div>
+
+            <!-- 手机端知识库（默认隐藏） -->
+            <div class="md:hidden bg-white rounded-2xl shadow-md p-4 mt-4 hidden" id="mobileKnowledgePanel">
+                <div class="relative mb-4">
+                    <input type="text" id="mobileKnowledgeSearch" placeholder="搜索养护知识..."
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 pl-10 outline-none focus:border-primary transition-colors">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <div class="space-y-2 max-h-60 overflow-y-auto" id="mobileKnowledgeList">
+                    <!-- 知识库内容将通过JS动态加载 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 知识库详情弹窗 -->
+    <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden" id="knowledgeModal">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-dark" id="knowledgeTitle">知识库详情</h2>
+                <button onclick="hideKnowledgeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="text-gray-700 space-y-3" id="knowledgeContent">
+                <!-- 内容将通过JS动态填充 -->
+            </div>
+            <button class="w-full mt-6 bg-primary/10 text-primary py-2 rounded-lg hover:bg-primary/20 transition-colors" onclick="hideKnowledgeModal()">
+                关闭
+            </button>
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="nav">
+        <a href="index.html" class="nav-item"><i class="fas fa-home nav-icon"></i>首页</a>
+        <a href="ai-assistant.html" class="nav-item active"><i class="fas fa-comments nav-icon"></i>AI助手</a>
+        <a href="diary.html" class="nav-item"><i class="fas fa-seedling nav-icon"></i>日记</a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user nav-icon"></i>我的</a>
+    </div>
+
+    <script>
+        // 配置后端API地址
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/v1/plant';
+        
+        // 全局变量：当前会话ID
+        let currentConversationId = '';
+
+        // 页面加载初始化
+        window.addEventListener('load', () => {
+            // 加载历史对话
+            loadHistoryConversations();
+            // 加载知识库
+            loadKnowledgeBase();
+
+            // 绑定事件
+            bindEvents();
+
+            // 手机端切换栏事件
+            document.getElementById('mobileChatTab').addEventListener('click', () => {
+                document.getElementById('mobileChatTab').classList.add('text-primary', 'border-b-2', 'border-primary');
+                document.getElementById('mobileChatTab').classList.remove('text-gray-500');
+                document.getElementById('mobileKnowledgeTab').classList.add('text-gray-500');
+                document.getElementById('mobileKnowledgeTab').classList.remove('text-primary', 'border-b-2', 'border-primary');
+                document.getElementById('mobileKnowledgePanel').classList.add('hidden');
+            });
+
+            document.getElementById('mobileKnowledgeTab').addEventListener('click', () => {
+                document.getElementById('mobileKnowledgeTab').classList.add('text-primary', 'border-b-2', 'border-primary');
+                document.getElementById('mobileKnowledgeTab').classList.remove('text-gray-500');
+                document.getElementById('mobileChatTab').classList.add('text-gray-500');
+                document.getElementById('mobileChatTab').classList.remove('text-primary', 'border-b-2', 'border-primary');
+                document.getElementById('mobileKnowledgePanel').classList.remove('hidden');
+            });
+
+            // 知识库搜索（手机端）
+            document.getElementById('mobileKnowledgeSearch').addEventListener('input', (e) => {
+                filterKnowledgeList(e.target.value, 'mobileKnowledgeList');
+            });
+
+            // 知识库搜索（电脑端）
+            document.getElementById('knowledgeSearch').addEventListener('input', (e) => {
+                filterKnowledgeList(e.target.value, 'knowledgeList');
+            });
+        });
+
+        // 绑定所有事件
+        function bindEvents() {
+            // 发送消息
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            // 上传图片
+            document.getElementById('uploadImageBtn').addEventListener('click', () => {
+                document.getElementById('imageUpload').click();
+            });
+
+            document.getElementById('imageUpload').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('image', file);
+
+                    // 显示上传状态
+                    addMessageToChat('user', '图片上传中...');
+                    
+                    const response = await fetch(`${API_BASE_URL}/analyze-image`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('图片上传失败');
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // 移除上传状态消息
+                        removeLastUserMessage();
+                        
+                        // 添加图片消息到对话
+                        addMessageToChat('image', `${API_BASE_URL.replace('/api', '')}${result.analysis.image_url}`);
+                        
+                        // 添加AI分析结果
+                        const analysisText = `图片分析结果：\n植物健康状况：${result.analysis.health}\n发现问题：${result.analysis.issues.join('、')}\n建议：${result.analysis.recommendations.join('；')}`;
+                        addMessageToChat('ai', analysisText);
+                    }
+                    
+                } catch (error) {
+                    console.error('图片分析失败:', error);
+                    removeLastUserMessage();
+                    addMessageToChat('ai', '抱歉，图片分析失败，请重试或直接描述植物问题。');
+                }
+            });
+
+            // 选择植物（关联咨询）
+            document.getElementById('selectPlantBtn').addEventListener('click', () => {
+                const plants = getPlants();
+                if (plants.length === 0) {
+                    alert('你还没有添加植物，快去添加植物档案吧～');
+                    return;
+                }
+
+                let plantOptions = '请选择要咨询的植物：\n';
+                plants.forEach((plant, idx) => {
+                    plantOptions += `${idx + 1}. ${plant.nickname}（${plant.species}）\n`;
+                });
+
+                const selectedIdx = prompt(plantOptions);
+                if (!selectedIdx || isNaN(selectedIdx) || selectedIdx < 1 || selectedIdx > plants.length) {
+                    return;
+                }
+
+                const selectedPlant = plants[selectedIdx - 1];
+                document.getElementById('chatInput').value = `我想咨询${selectedPlant.nickname}（${selectedPlant.species}）的养护问题：`;
+                document.getElementById('chatInput').focus();
+            });
+
+            // 清空对话
+            document.getElementById('clearChatBtn').addEventListener('click', () => {
+                if (confirm('确定新建对话吗？')) {
+                    document.getElementById('chatContent').innerHTML = '';
+                    // 重新添加欢迎消息
+                    const welcomeMsg = `
+                        <div class="flex mb-6">
+                            <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                                <i class="fas fa-robot text-primary"></i>
+                            </div>
+                            <div class="chat-bubble-ai">
+                                <p class="text-gray-800">
+                                    你好呀！我是你的植物养护助手小植～ 有任何养护问题都可以问我哦！比如：
+                                </p>
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    <button class="bg-neutral text-primary text-xs px-2 py-1 rounded-full hover:bg-secondary/20 transition-colors" onclick="sendSampleQuestion('多肉叶子发黄怎么办？')">
+                                        多肉叶子发黄怎么办？
+                                    </button>
+                                    <button class="bg-neutral text-primary text-xs px-2 py-1 rounded-full hover:bg-secondary/20 transition-colors" onclick="sendSampleQuestion('绿萝多久浇一次水？')">
+                                        绿萝多久浇一次水？
+                                    </button>
+                                    <button class="bg-neutral text-primary text-xs px-2 py-1 rounded-full hover:bg-secondary/20 transition-colors" onclick="sendSampleQuestion('室内植物需要晒太阳吗？')">
+                                        室内植物需要晒太阳吗？
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('chatContent').insertAdjacentHTML('beforeend', welcomeMsg);
+                    currentConversationId = '';
+                }
+            });
+        }
+
+        // 发送示例问题
+        function sendSampleQuestion(question) {
+            document.getElementById('chatInput').value = question;
+            sendMessage();
+        }
+        
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('chatInput').value.trim();
+            if (!input) return;
+
+            // 添加用户消息到对话
+            addMessageToChat('user', input);
+            document.getElementById('chatInput').value = '';
+
+            // 生成AI回复
+            await generateAiReply(input);
+        }
+
+        // 添加消息到对话界面
+        function addMessageToChat(type, content) {
+            const chatContent = document.getElementById('chatContent');
+            let msgHtml = '';
+
+            if (type === 'user') {
+                msgHtml = `
+                    <div class="flex mb-6 justify-end">
+                        <div class="chat-bubble-user">
+                            <p>${content}</p>
+                        </div>
+                        <div class="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center ml-3 flex-shrink-0">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'ai') {
+                msgHtml = `
+                    <div class="flex mb-6">
+                        <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fas fa-robot text-primary"></i>
+                        </div>
+                        <div class="chat-bubble-ai">
+                            <p class="text-gray-800">${content}</p>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'image') {
+                msgHtml = `
+                    <div class="flex mb-6 justify-end">
+                        <div class="chat-bubble-user">
+                            <img src="${content}" alt="用户上传图片" class="w-48 rounded-lg">
+                        </div>
+                        <div class="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center ml-3 flex-shrink-0">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                    </div>
+                `;
+            }
+
+            chatContent.insertAdjacentHTML('beforeend', msgHtml);
+            // 滚动到底部
+            chatContent.scrollTop = chatContent.scrollHeight;
+        }
+
+        // 生成AI回复（调用真实API）
+        async function generateAiReply(question) {
+            try {
+                // 显示加载状态
+                const loadingMsg = '小植正在思考中...';
+                addMessageToChat('ai', loadingMsg);
+                
+                const formData = new FormData();
+                formData.append('message', question);
+                if (currentConversationId) {
+                    formData.append('conversation_id', currentConversationId);
+                }
+
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP错误! 状态码: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 更新对话ID
+                    currentConversationId = data.conversation_id;
+                    
+                    // 移除加载消息，添加真实回复
+                    removeLastAIMessage();
+                    addMessageToChat('ai', data.message);
+                } else {
+                    throw new Error(data.error || '未知错误');
+                }
+                
+            } catch (error) {
+                console.error('AI回复生成失败:', error);
+                // 移除加载消息
+                removeLastAIMessage();
+                // 显示错误信息或备用回复
+                const fallbackReply = `抱歉，AI助手暂时无法响应。错误信息：${error.message}。请检查网络连接或稍后再试。`;
+                addMessageToChat('ai', fallbackReply);
+            }
+        }
+
+        // 移除最后一条AI消息（用于替换加载消息）
+        function removeLastAIMessage() {
+            const chatContent = document.getElementById('chatContent');
+            const messages = chatContent.querySelectorAll('.flex.mb-6');
+            const lastMessage = messages[messages.length - 1];
+            
+            if (lastMessage && lastMessage.querySelector('.chat-bubble-ai')) {
+                lastMessage.remove();
+            }
+        }
+
+        // 移除最后一条用户消息（用于替换上传状态）
+        function removeLastUserMessage() {
+            const chatContent = document.getElementById('chatContent');
+            const messages = chatContent.querySelectorAll('.flex.mb-6');
+            const lastMessage = messages[messages.length - 1];
+            
+            if (lastMessage && lastMessage.querySelector('.chat-bubble-user')) {
+                lastMessage.remove();
+            }
+        }
+
+        // 加载知识库
+        async function loadKnowledgeBase() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/knowledge`);
+                const data = await response.json();
+                
+                const knowledgeList = document.getElementById('knowledgeList');
+                const mobileKnowledgeList = document.getElementById('mobileKnowledgeList');
+                
+                if (data.knowledge && data.knowledge.length > 0) {
+                    knowledgeList.innerHTML = '';
+                    mobileKnowledgeList.innerHTML = '';
+                    
+                    data.knowledge.forEach(item => {
+                        const knowledgeItem = `
+                            <div class="p-3 bg-neutral rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-secondary/20 transition-colors" onclick="showKnowledgeDetail('${item.id}')">
+                                ${item.title}
+                            </div>
+                        `;
+                        knowledgeList.insertAdjacentHTML('beforeend', knowledgeItem);
+                        mobileKnowledgeList.insertAdjacentHTML('beforeend', knowledgeItem);
+                    });
+                }
+            } catch (error) {
+                console.error('加载知识库失败:', error);
+            }
+        }
+
+        // 加载历史对话
+        async function loadHistoryConversations() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/conversations`);
+                const data = await response.json();
+                
+                const historyContainer = document.getElementById('historyConversations');
+                
+                if (!data.conversations || data.conversations.length === 0) {
+                    historyContainer.innerHTML = '<div class="text-center text-sm text-gray-500 py-4">暂无历史对话</div>';
+                    return;
+                }
+
+                historyContainer.innerHTML = '';
+                data.conversations.forEach(conv => {
+                    const date = new Date(conv.created_at);
+                    const dateStr = `${date.getMonth() + 1}月${date.getDate()}日`;
+                    
+                    const convHtml = `
+                        <div class="p-3 bg-neutral rounded-lg cursor-pointer hover:bg-secondary/20 transition-colors" onclick="loadConversation('${conv.id}')">
+                            <div class="flex justify-between items-start">
+                                <h3 class="text-sm font-medium text-dark truncate">${conv.title}</h3>
+                                <span class="text-xs text-gray-500">${dateStr}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1 truncate">${conv.last_message}</p>
+                        </div>
+                    `;
+                    historyContainer.insertAdjacentHTML('beforeend', convHtml);
+                });
+            } catch (error) {
+                console.error('加载历史对话失败:', error);
+            }
+        }
+
+        // 加载特定对话详情
+        async function loadConversation(convId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/conversations/${convId}`);
+                const conv = await response.json();
+                
+                if (!conv) return;
+
+                // 清空当前对话
+                document.getElementById('chatContent').innerHTML = '';
+                currentConversationId = convId;
+
+                // 加载对话历史
+                for (let i = 0; i < conv.messages.length; i++) {
+                    const msg = conv.messages[i];
+                    if (msg.role === 'user') {
+                        addMessageToChat('user', msg.content);
+                    } else if (msg.role === 'assistant') {
+                        // 添加一点延迟，使消息显示更自然
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                        addMessageToChat('ai', msg.content);
+                    }
+                }
+            } catch (error) {
+                console.error('加载对话失败:', error);
+            }
+        }
+
+        // 筛选知识库列表
+        function filterKnowledgeList(keyword, listId) {
+            const list = document.getElementById(listId);
+            const items = list.querySelectorAll('div');
+            keyword = keyword.toLowerCase();
+
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(keyword)) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            // 检查是否有匹配结果
+            const visibleItems = list.querySelectorAll('div:not(.hidden)');
+            if (visibleItems.length === 0) {
+                list.innerHTML = '<div class="text-center text-sm text-gray-500 py-4">未找到相关知识</div>';
+            }
+        }
+
+        // 显示知识库详情
+        async function showKnowledgeDetail(knowledgeId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/knowledge/${knowledgeId}`);
+                const knowledge = await response.json();
+                
+                const knowledgeModal = document.getElementById('knowledgeModal');
+                const knowledgeTitle = document.getElementById('knowledgeTitle');
+                const knowledgeContent = document.getElementById('knowledgeContent');
+
+                knowledgeTitle.textContent = knowledge.title;
+                knowledgeContent.innerHTML = knowledge.content;
+                knowledgeModal.classList.remove('hidden');
+            } catch (error) {
+                console.error('加载知识详情失败:', error);
+                alert('加载知识详情失败');
+            }
+        }
+
+        // 隐藏知识库详情弹窗
+        function hideKnowledgeModal() {
+            document.getElementById('knowledgeModal').classList.add('hidden');
+        }
+
+        // 获取用户添加的植物列表（与主应用数据同步）
+        function getPlants() {
+            return JSON.parse(localStorage.getItem('zhiwu_plants')) || [];
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,413 @@
+/* 全局重置与基础样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+  }
+  
+  body {
+    display: flex;
+    height: 100vh;
+    background-color: #f5f7fa;
+    color: #333;
+  }
+  
+  /* 左侧导航栏（主题色适配） */
+  .sidebar {
+    width: 220px;
+    background-color: #386230; /* 主题色1：深绿 */
+    color: #ffffff; /* 文字白色，与深绿对比 */
+    padding: 20px 0;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    border-top-right-radius: 16px; /* 导航栏右上角圆角 */
+    border-bottom-right-radius: 16px; /* 导航栏右下角圆角 */
+  }
+  
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1); /* 浅色边框分隔 */
+    margin-bottom: 15px;
+  }
+  
+  .sidebar-logo {
+    width: 48px;
+    height: 48px;
+    background-color: #8CB01E; /* 主题色2：中绿 */
+    border-radius: 12px; /* 加大Logo圆角（原8px） */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+  }
+  
+  .sidebar-logo i {
+    font-size: 24px;
+    color: #386230; /* 图标用深绿，与Logo背景对比 */
+  }
+  
+  .sidebar-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  
+  .menu-list {
+    padding: 0 10px;
+  }
+  
+  .menu-item {
+    padding: 12px 20px;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 10px; /* 加大菜单项圆角（原6px） */
+    margin: 4px 0;
+    transition: all 0.2s ease;
+  }
+  
+  /* 选中状态（用主题色2高亮） */
+  .menu-item.active {
+    background-color: rgba(140, 176, 30, 0.2); /* 主题色2透明背景 */
+    color: #8CB01E; /* 文字用主题色2 */
+    border-left: 3px solid #8CB01E; /* 左侧主题色2边框 */
+  }
+  
+  .menu-item:hover:not(.active) {
+    background-color: rgba(255,255,255,0.08); /* 浅白透明背景 */
+  }
+  
+  .menu-item i {
+    font-size: 18px;
+    width: 22px;
+    text-align: center;
+    color: rgba(255,255,255,0.7); /* 未选中图标浅白 */
+  }
+  
+  .menu-item.active i {
+    color: #8CB01E; /* 选中图标用主题色2 */
+  }
+  
+  /* 右侧主内容区（主题色同步） */
+  .main-content {
+    flex: 1;
+    padding: 25px;
+    overflow-y: auto;
+  }
+  
+  .header-bar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .header-bar .icon {
+    font-size: 22px;
+    color: #386230; /* 图标用主题色1 */
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  
+  .header-bar .icon:hover {
+    color: #8CB01E; /* hover时用主题色2 */
+  }
+  
+  .header-bar input {
+    flex: 1;
+    max-width: 350px;
+    padding: 10px 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px; /* 加大输入框圆角（原6px） */
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+  }
+  
+  .header-bar input:focus {
+    border-color: #8CB01E; /* 聚焦边框用主题色2 */
+    box-shadow: 0 0 0 3px rgba(140, 176, 30, 0.1);
+  }
+  
+  .header-bar .user-profile {
+    width: 36px;
+    height: 36px;
+    background-color: #8CB01E; /* 头像背景用主题色2 */
+    border-radius: 50%; /* 圆形保持不变 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #386230;
+    font-size: 16px;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* 统计卡片（用提供的四个主题色） */
+  .stats-cards {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+  }
+  
+  .stats-card {
+    flex: 1;
+    min-width: 200px;
+    padding: 20px;
+    border-radius: 16px; /* 加大卡片圆角（原8px） */
+    color: #ffffff; /* 卡片文字白色，与背景对比 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease;
+    position: relative;
+  }
+  
+  .stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* 四个卡片分别用提供的主题色 */
+  .stats-card:nth-child(1) {
+    background-color: #386230; /* 主题色1：深绿 */
+  }
+  .stats-card:nth-child(2) {
+    background-color: #8CB01E; /* 主题色2：中绿 */
+  }
+  .stats-card:nth-child(3) {
+    background-color: #F8D785; /* 主题色3：浅黄 */
+    color: #333; /* 浅黄背景用深色文字 */
+  }
+  .stats-card:nth-child(4) {
+    background-color: #ED976B; /* 主题色4：浅橙 */
+    color: #333; /* 浅橙背景用深色文字 */
+  }
+  
+  .stats-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px; /* 加大图标背景圆角（原6px） */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    background-color: rgba(255,255,255,0.2); /* 半透明白色图标背景 */
+  }
+  
+  .stats-card:nth-child(3) .stats-card-icon,
+  .stats-card:nth-child(4) .stats-card-icon {
+    background-color: rgba(0,0,0,0.1); /* 浅背景用半透明深色图标背景 */
+  }
+  
+  .stats-card-icon i {
+    font-size: 20px;
+  }
+  
+  .stats-card-label {
+    font-size: 14px;
+    margin-bottom: 4px;
+    opacity: 0.9;
+  }
+  
+  .stats-card-value {
+    font-size: 26px;
+    font-weight: 700;
+  }
+  
+  /* 数据面板（主题色同步） */
+  .data-panels {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+  }
+  
+  .panel {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 16px; /* 加大面板圆角（原8px） */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f3f4f6;
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .panel:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  .panel h3 {
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #386230; /* 标题用主题色1 */
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 12px;
+  }
+  
+  .panel h3 i {
+    font-size: 18px;
+    color: #8CB01E; /* 标题图标用主题色2 */
+  }
+  
+  /* 进度条（用主题色2） */
+  .progress-item {
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .progress-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .progress-item span {
+    width: 130px;
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    background-color: #f3f4f6;
+    border-radius: 8px; /* 加大进度条圆角（原4px） */
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: #8CB01E; /* 进度条用主题色2 */
+    border-radius: 8px; /* 进度条圆角同步加大 */
+    transition: width 0.5s ease;
+  }
+  
+  .progress-fill.error {
+    background-color: #ED976B; /* 错误态用主题色4 */
+  }
+  
+  /* 异常项按钮（用主题色） */
+  .alert-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+  }
+  
+  .alert-item:hover {
+    background-color: #f9fafb;
+  }
+  
+  .alert-item:last-child {
+    border-bottom: none;
+  }
+  
+  .alert-item span {
+    font-size: 14px;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .alert-item span i {
+    color: #ED976B; /* 异常图标用主题色4 */
+    font-size: 16px;
+  }
+  
+  .alert-btn {
+    font-size: 13px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 8px; /* 加大按钮圆角（原4px） */
+    cursor: pointer;
+    margin-left: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .alert-btn.view {
+    background-color: rgba(140, 176, 30, 0.1); /* 主题色2透明背景 */
+    color: #8CB01E; /* 文字用主题色2 */
+    font-weight: 500;
+  }
+  
+  .alert-btn.view:hover {
+    background-color: rgba(140, 176, 30, 0.2);
+  }
+  
+  .alert-btn.ignore {
+    background-color: rgba(237, 151, 107, 0.1); /* 主题色4透明背景 */
+    color: #ED976B; /* 文字用主题色4 */
+  }
+  
+  .alert-btn.ignore:hover {
+    background-color: rgba(237, 151, 107, 0.2);
+  }
+  
+  /* 响应式适配 */
+  @media (max-width: 1200px) {
+    .data-panels {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 64px;
+      padding: 20px 0;
+      border-top-right-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+  
+    .sidebar-header .sidebar-title,
+    .menu-item span {
+      display: none;
+    }
+  
+    .sidebar-header {
+      justify-content: center;
+      padding: 0 0 15px;
+    }
+  
+    .sidebar-logo {
+      margin-right: 0;
+    }
+  
+    .menu-list {
+      padding: 0;
+    }
+  
+    .menu-item {
+      justify-content: center;
+      padding: 12px 0;
+      border-radius: 8px;
+    }
+  
+    .menu-item.active {
+      border-left: none;
+      background-color: rgba(140, 176, 30, 0.3);
+    }
+  
+    .stats-cards {
+      gap: 15px;
+    }
+  
+    .stats-card {
+      min-width: 150px;
+      border-radius: 12px;
+    }
+  }
