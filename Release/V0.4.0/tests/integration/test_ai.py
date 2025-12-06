@@ -2,7 +2,6 @@ import pytest
 from fastapi.testclient import TestClient
 from app.core.config import settings
 from unittest.mock import AsyncMock, patch
-import json
 import io
 
 pytestmark = pytest.mark.asyncio
