@@ -3,7 +3,7 @@ import pytest
 from tortoise.exceptions import DoesNotExist
 from app.models.user import User
 from app.models.plant import Plant
-from datetime import date, timedelta
+from datetime import date
 
 # 确保所有测试都是异步的
 pytestmark = pytest.mark.asyncio

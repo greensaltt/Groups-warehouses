@@ -1,10 +1,9 @@
 import pytest
 import asyncio
-from httpx import AsyncClient # 使用 httpx 模拟客户端
 from fastapi.testclient import TestClient
 from app.main import app # 假设您的 FastAPI 应用实例在 app.main.py 中
 from app.core.config import settings
-from tortoise import Tortoise, run_async
+from tortoise import Tortoise
 
 # 假设 User 模型和依赖项已正确导入
 from app.models.user import User 

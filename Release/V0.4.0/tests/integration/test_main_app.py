@@ -3,7 +3,6 @@ from fastapi.testclient import TestClient
 from app.core.config import settings
 # 修正: 导入 pathlib 和更细致的 mock
 from unittest.mock import patch
-import pathlib
 
 pytestmark = pytest.mark.asyncio
 
