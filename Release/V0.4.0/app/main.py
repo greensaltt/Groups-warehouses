@@ -47,9 +47,7 @@ register_tortoise(
     db_url=settings.DATABASE_URL,
     modules={
         # 这里必须包含所有存放 Model 的路径
-        # 之前的写法: "models": ["app.models.user"]
-        # 现在的写法: 添加 "app.models.plant"
-        "models": ["app.models.user", "app.models.plant"]
+        "models": ["app.models.user", "app.models.plant", "app.models.diary"]
     },
     generate_schemas=True, # 自动建表（生产环境建议改为False，使用aerich迁移工具）
     add_exception_handlers=True,
