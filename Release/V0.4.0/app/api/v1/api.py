@@ -4,6 +4,7 @@ from app.api.v1.endpoints import user
 from app.api.v1.endpoints import ai      # 之前的 AI 模块
 from app.api.v1.endpoints import reminder # 新增的 提醒/植物 模块
 from app.api.v1.endpoints import user_center
+from app.api.v1.endpoints import diary
 
 api_router = APIRouter()
 
@@ -20,3 +21,6 @@ api_router.include_router(reminder.router, prefix="", tags=["智慧提醒与管�
 
 # 用户中心模块 -> /api/v1/user_center/...
 api_router.include_router(user_center.router, prefix="/user_center", tags=["用户中心"])
+
+# 种植日记模块 -> /api/v1/diary/...
+api_router.include_router(diary.router,prefix="/diary",tags=['植物日记'])
