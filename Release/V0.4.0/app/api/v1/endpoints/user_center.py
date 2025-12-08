@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Depends, UploadFile, File
 import os
 import uuid
+from datetime import date
 
 from app.api.deps import get_current_user
 from app.models.user import User
+from app.models.plant import Plant
 from app.schemas.user import BaseResponse
 from app.schemas.user_center import (
     UserProfile,
     UserProfileUpdate,
-    PasswordChange
+    PasswordChange,
+    UserStats,
 )
 from app.core.security import verify_password, get_password_hash
 
@@ -173,6 +176,19 @@ async def change_password(
     )
 
 
+@router.post("/logout", response_model=BaseResponse)
+async def logout(current_user: User = Depends(get_current_user)):
+    """
+    退出登录
+    """
+    # 这里的逻辑主要依赖于前端：前端收到成功响应后，应删除 localStorage/Cookies 中的 Token。
+    # 如果系统实现了 Redis Token 黑名单，应在此处将 Token 拉黑。
+
+    return BaseResponse(
+        code=200,
+        msg="退出登录成功"
+    )
+
 @router.delete("/delete", response_model=BaseResponse)
 async def delete_account(current_user: User = Depends(get_current_user)):
     """
@@ -193,3 +209,34 @@ async def delete_account(current_user: User = Depends(get_current_user)):
         msg="账户删除成功"
     )
 
+@router.get("/stats", response_model=BaseResponse)
+async def get_user_stats(current_user: User = Depends(get_current_user)):
+    """
+    获取个人中心统计数据
+    - plantCount: 用户植物总数（未删除）
+    - diaryCount: 日记数量（目前暂无日记表，先返回0，后续可对接真实数据）
+    - careDays: 养护天数（按账号注册天数计算）
+    """
+    # 统计植物数量
+    plant_count = await Plant.filter(user=current_user, is_deleted=False).count()
+
+    # 日记数量占位：暂无日记表，先返回0，后续接入日记模型时替换
+    diary_count = 0
+
+    # 养护天数：账号注册到今天的天数，至少为1
+    if current_user.created_at:
+        care_days = max((date.today() - current_user.created_at.date()).days + 1, 1)
+    else:
+        care_days = 1
+
+    stats = UserStats(
+        plantCount=plant_count,
+        diaryCount=diary_count,
+        careDays=care_days
+    )
+
+    return BaseResponse(
+        code=200,
+        msg="获取成功",
+        data=stats.model_dump()
+    )

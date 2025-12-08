@@ -380,10 +380,18 @@
     }
 
     async function loadStats() {
-        // 暂时使用模拟数据，防止报错
-        document.getElementById('plantCount').textContent = 4;
-        document.getElementById('diaryCount').textContent = 12;
-        document.getElementById('careCount').textContent = 35;
+        try {
+            const response = await apiRequest('/stats');
+            const stats = response.data || {};
+            document.getElementById('plantCount').textContent = stats.plantCount ?? 0;
+            document.getElementById('diaryCount').textContent = stats.diaryCount ?? 0;
+            document.getElementById('careCount').textContent = stats.careDays ?? 0;
+        } catch (error) {
+            console.error('加载统计数据失败，使用占位值', error);
+            document.getElementById('plantCount').textContent = 0;
+            document.getElementById('diaryCount').textContent = 0;
+            document.getElementById('careCount').textContent = 0;
+        }
     }
 
     function bindEvents() {
