@@ -71,25 +71,6 @@
 
     <!-- 功能菜单 -->
     <div class="menu mx-4 my-4 bg-white rounded-lg shadow-md overflow-hidden">
-        <!-- 养护记录 -->
-        <div class="menu-section p-4 border-b border-gray-100">
-            <h4 class="text-base font-medium text-gray-800 mb-3 inline-block relative">
-                养护记录
-                <span class="absolute bottom-0 left-0 w-14 h-0.5 bg-primary"></span>
-            </h4>
-            <div class="record-grid flex gap-3 overflow-x-auto pb-2">
-                <div class="record-item w-24 flex-shrink-0 rounded-lg overflow-hidden shadow-sm cursor-pointer" data-record-id="1">
-                    <img src="https://picsum.photos/200/200?random=1" alt="植物养护记录" class="w-full h-24 object-cover">
-                </div>
-                <div class="record-item w-24 flex-shrink-0 rounded-lg overflow-hidden shadow-sm cursor-pointer" data-record-id="2">
-                    <img src="https://picsum.photos/200/200?random=2" alt="植物养护记录" class="w-full h-24 object-cover">
-                </div>
-                <div class="record-item w-24 flex-shrink-0 rounded-lg overflow-hidden shadow-sm cursor-pointer" data-record-id="3">
-                    <img src="https://picsum.photos/200/200?random=3" alt="植物养护记录" class="w-full h-24 object-cover">
-                </div>
-            </div>
-        </div>
-
         <!-- 个人资料 -->
         <div class="menu-section p-4 border-b border-gray-100">
             <a href="#" class="menu-link flex justify-between items-center text-gray-800 hover:text-primary transition-colors" id="editProfileLink">
@@ -203,27 +184,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- 养护记录详情弹窗 -->
-    <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 hidden" id="recordDetailModal">
-        <div class="w-full max-w-md bg-white rounded-lg shadow-xl p-5 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-base font-semibold text-gray-800">养护记录详情</h2>
-                <button onclick="hideRecordDetailModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div class="record-detail-content">
-                <img id="recordDetailImage" src="" alt="养护记录图片" class="w-full h-48 object-cover rounded-lg mb-3">
-                <div class="space-y-2">
-                    <p><span class="text-gray-500">植物名称：</span><span id="recordPlantName">加载中...</span></p>
-                    <p><span class="text-gray-500">养护类型：</span><span id="recordCareType">加载中...</span></p>
-                    <p><span class="text-gray-500">养护时间：</span><span id="recordTime">加载中...</span></p>
-                    <p><span class="text-gray-500">养护备注：</span><span id="recordNote">加载中...</span></p>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -395,6 +355,37 @@
     }
 
     function bindEvents() {
+         //new12.8 意见反馈点击事件
+         document.querySelector('a[href="#feedback"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('意见反馈功能即将上线，敬请期待～');
+        });
+
+        //new12.8 关于我们点击事件
+        document.querySelector('a[href="#about"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('关于植悟：\n一款专注于植物智能养护的工具，让养花变得简单有趣～\n版本号：V1.0.0');
+        });
+
+        //new12.8 用户协议点击事件
+        document.querySelector('a[href="#agreement"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('用户协议与隐私政策：\n我们将严格保护你的个人信息和植物数据，仅用于提供养护服务～');
+        });
+             // 删除账号点击事件
+        document.querySelector('a[href="#deleteAccount"]').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (confirm('确定要删除账号吗？此操作不可恢复不可恢复！')) {
+                try {
+                    await apiRequest('/delete', { method: 'DELETE' });
+                    alert('账号删除成功');
+                    performLogout();
+                } catch (error) {
+                    alert('账号删除功能将在后续版本开放');
+                }
+            }
+        });
+    
         // 退出登录
         const logoutBtn = document.getElementById('logoutBtn');
         if(logoutBtn) {
@@ -404,7 +395,7 @@
                 }
             });
         }
-
+        
         // 上传头像
         const avatarBtn = document.getElementById('changeAvatarBtn');
         const avatarInput = document.getElementById('avatarUpload');
@@ -523,17 +514,6 @@
     window.hideEditProfileModal = function() {
         document.getElementById('editProfileModal').classList.add('hidden');
     };
-
-    // 养护记录详情相关 (模拟)
-    window.showRecordDetailModal = function() {
-        document.getElementById('recordDetailModal').classList.remove('hidden');
-    }
-    window.hideRecordDetailModal = function() {
-        document.getElementById('recordDetailModal').classList.add('hidden');
-    }
-    document.querySelectorAll('.record-item').forEach(item => {
-        item.addEventListener('click', showRecordDetailModal);
-    });
 
     // 初始化
     window.addEventListener('load', () => {

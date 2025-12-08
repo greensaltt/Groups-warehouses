@@ -175,15 +175,116 @@
             position: relative;
         }
         /* 简单的花盆图标样式 */
-        .pot { width: 100%; height: 16px; background: #FFA07A; border-radius: 4px 4px 0 0; position: absolute; bottom: 0; }
-        .plant { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #2E8B57; border-radius: 6px 6px 0 0; }
-        .brand-text { color: #333333; font-weight: 500; font-size: 16px; }
-        .form-container { width: 100%; padding: 0 30px; box-sizing: border-box; }
+        .pot { 
+    width: 100%; 
+    height: 16px; 
+    background: #FFA07A; 
+    border-radius: 4px 4px 0 0; 
+    position: absolute; 
+    bottom: 0; 
+}
+.pot::after { 
+    content: ''; 
+    position: absolute; 
+    bottom: -4px; 
+    left: -2px; 
+    width: calc(100% + 4px); 
+    height: 4px; 
+    background: #FFA07A; 
+    border-radius: 0 0 4px 4px; 
+}
+.plant { 
+    position: absolute; 
+    bottom: 16px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    width: 12px; 
+    height: 12px; 
+    background: #2E8B57; 
+    border-radius: 6px 6px 0 0; 
+}
+.plant::before, .plant::after { 
+    content: ''; 
+    position: absolute; 
+    width: 8px; 
+    height: 8px; 
+    background: #2E8B57; 
+    border-radius: 50%; 
+}
+.plant::before { 
+    top: -4px; 
+    left: -6px; 
+} 
+.plant::after { 
+    top: -4px; 
+    right: -6px; 
+}
+.form-container { width: 100%; padding: 0 30px; box-sizing: border-box; }
+       /* 全局移动端屏幕适配 */
+@media (max-width: 767px) {
+    body {
+        padding: 1rem 0.5rem; /* 减小边距 */
+        min-height: auto; /* 移除最小高度限制，允许内容高度自适应 */
+        height: 100vh; /* 使用视口高度 */
+        box-sizing: border-box; /* 确保padding不会增加总高度 */
+    }
 
-        @media (max-width: 767px) {
-            .form-container { padding: 0 16px; }
-            .sun-decoration { width: 60px; height: 60px; }
-        }
+    .register-container {
+        padding: 10px 0; /* 减小容器内边距 */
+        flex: 1; /* 让容器占据可用空间 */
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* 垂直居中 */
+    }
+
+    .register-module {
+        padding: 20px 15px; /* 进一步减小内边距 */
+        max-height: 90vh; /* 限制最大高度为视口的90% */
+        overflow-y: auto; /* 内容过多时才显示滚动 */
+        margin: 20px 15px; /* 增加左右外边距，让模块远离屏幕边缘 */
+        width: calc(100% - 30px); /* 配合左右margin计算宽度，避免溢出 */
+    }
+
+    .form-container {
+        padding: 0 8px; /* 减小表单容器内边距 */
+    }
+
+    .register-title {
+        padding: 12px 0; /* 减小标题上下间距 */
+        font-size: 17px; /* 适当减小标题字体 */
+    }
+
+    .input-group {
+        margin: 12px 0; /* 减小输入组间距 */
+    }
+
+    .input-label {
+        margin-bottom: 6px; /* 减小标签与输入框间距 */
+        font-size: 13px; /* 减小标签字体 */
+    }
+
+    .input-field {
+        height: 46px; /* 进一步减小输入框高度 */
+        font-size: 13px; /* 减小输入框字体 */
+        padding: 10px 14px; /* 调整输入框内边距 */
+    }
+
+    .btn {
+        height: 48px; /* 进一步减小按钮高度 */
+        font-size: 14px; /* 减小按钮字体 */
+        margin: 16px 0 8px 0; /* 调整按钮间距 */
+    }
+
+    .description {
+        font-size: 12px; /* 减小描述文字 */
+        margin: 6px 0 10px 0; /* 调整描述文字间距 */
+    }
+
+    .brand-container {
+        margin: 12px 0 0 0; /* 调整品牌区域间距 */
+        height: 36px; /* 减小品牌区域高度 */
+    }
+}
     </style>
 </head>
 <body>

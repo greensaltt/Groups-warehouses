@@ -9,31 +9,33 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
-        /* 保持原有样式不变 */
+        /* 保持原有样式不变，新增/修改部分标注 */
         body { font-family: 'Inter', sans-serif; background: #FFFFFF; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; margin: 0; position: relative; }
         .background-image { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('./assets/images/登录界面底图.png'); background-size: cover; background-position: center; opacity: 1; z-index: 0; }
-        .login-container { width: 100%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
-        .login-module { background: rgba(255, 255, 255, 0.95); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); border-radius: 12px; position: relative; z-index: 1; width: 100%; max-width: 500px; backdrop-filter: blur(5px); }
-        .login-title { color: #000; font-weight: 600; text-align: center; width: 100%; position: relative; margin: 0; padding: 24px 0; }
+        .login-container { width: 100%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; padding: 20px 0; }
+        .login-module { background: rgba(255, 255, 255, 0.95); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); border-radius: 12px; position: relative; z-index: 1; width: 100%; max-width: 500px; backdrop-filter: blur(5px); transition: all 0.3s ease; }
+        .login-title { color: #000; font-weight: 600; text-align: center; width: 100%; position: relative; margin: 0; padding: 24px 0; font-size: 20px; }
         .login-title::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 2px; background-color: #2E8B57; }
-        .tab-container { width: 100%; height: 40px; display: flex; justify-content: center; margin: 8px 0 12px 0; }
-        .tab { font-weight: 500; color: #333; text-align: center; cursor: pointer; transition: all 0.3s ease; position: relative; display: flex; align-items: center; justify-content: center; }
-        .tab.active { color: #2E8B57; }
-        .tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background-color: #2E8B57; }
-        .input-group { width: 100%; margin: 12px 0; }
-        .input-label { color: #333; font-weight: 500; margin-bottom: 8px; display: block; }
-        .input-field { width: 100%; height: 50px; padding: 12px 16px; border: 1px solid #EEEEEE; border-radius: 8px; background: #FFF; transition: all 0.2s ease; font-size: 14px; color: #333; box-sizing: border-box; }
+        .input-group { width: 100%; margin: 16px 0; }
+        .input-label { color: #333; font-weight: 500; margin-bottom: 8px; display: block; font-size: 14px; }
+        .input-field { width: 100%; height: 52px; padding: 12px 16px; border: 1px solid #EEEEEE; border-radius: 8px; background: #FFF; transition: all 0.2s ease; font-size: 15px; color: #333; box-sizing: border-box; }
         .input-field:focus { border-color: #2E8B57; outline: none; box-shadow: 0 0 0 2px rgba(46, 139, 87, 0.1); }
         .password-container { position: relative; }
-        .password-toggle { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #AAA; cursor: pointer; }
-       /* 忘记密码功能未实现，先改成白色隐藏 */
-        .forgot-password { color: #ffffff; font-size: 12px; text-decoration: none; position: absolute; right: 0; top: 0; height: 24px; line-height: 24px; }
+        .password-toggle { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #AAA; cursor: pointer; font-size: 18px; }
+        .password-toggle:hover { color: #2E8B57; }
+        .forgot-password { color: #2E8B57; font-size: 13px; text-decoration: none; position: absolute; right: 0; top: 0; height: 24px; line-height: 24px; cursor: pointer; font-weight: 500; }
+        .forgot-password:hover { text-decoration: underline; }
+        .back-to-login { color: #2E8B57; font-size: 13px; text-decoration: none; cursor: pointer; font-weight: 500; }
+        .back-to-login:hover { text-decoration: underline; }
         .btn { width: 100%; height: 56px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; border: none; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-        .btn-login { background: linear-gradient(135deg, #2E8B57 0%, #90EE90 100%); color: #FFF; margin: 20px 0 16px 0; box-shadow: 0 4px 12px rgba(46, 139, 87, 0.3); }
-        .btn-login:hover { background: linear-gradient(135deg, #228B22 0%, #ADFF2F 100%); transform: translateY(-2px); }
-        .btn-login:disabled { opacity: 0.7; cursor: not-allowed; transform: none; } /* 新增禁用样式 */
-        .btn-register { background: #FFF; border: 1px solid #EEEEEE; color: #333; text-decoration: none; }
-        .btn-register:hover { border-color: #2E8B57; color: #2E8B57; }
+        .btn-login { background: linear-gradient(135deg, #2E8B57 0%, #90EE90 100%); color: #FFF; margin: 20px 0 12px 0; box-shadow: 0 4px 12px rgba(46, 139, 87, 0.3); }
+        .btn-login:hover { background: linear-gradient(135deg, #228B22 0%, #ADFF2F 100%); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(46, 139, 87, 0.4); }
+        .btn-login:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: 0 4px 12px rgba(46, 139, 87, 0.3); }
+        .btn-reset { background: linear-gradient(135deg, #2E8B57 0%, #90EE90 100%); color: #FFF; margin: 20px 0 12px 0; box-shadow: 0 4px 12px rgba(46, 139, 87, 0.3); }
+        .btn-reset:hover { background: linear-gradient(135deg, #228B22 0%, #ADFF2F 100%); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(46, 139, 87, 0.4); }
+        .btn-reset:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: 0 4px 12px rgba(46, 139, 87, 0.3); }
+        .btn-register { background: #FFF; border: 1px solid #EEEEEE; color: #333; text-decoration: none; margin-top: 12px; }
+        .btn-register:hover { border-color: #2E8B57; color: #2E8B57; background-color: #F9FFF9; }
         .brand-container { display: flex; align-items: center; justify-content: center; height: 40px; margin: 24px 0 0 0; }
         .brand-icon { width: 24px; height: 24px; margin-right: 8px; position: relative; }
         .pot { width: 100%; height: 16px; background: #FFA07A; border-radius: 4px 4px 0 0; position: absolute; bottom: 0; }
@@ -42,15 +44,98 @@
         .plant::before, .plant::after { content: ''; position: absolute; width: 8px; height: 8px; background: #2E8B57; border-radius: 50%; }
         .plant::before { top: -4px; left: -6px; } .plant::after { top: -4px; right: -6px; }
         .brand-text { color: #333; font-weight: 500; font-size: 16px; }
-        .captcha-container { display: flex; gap: 12px; }
-        .captcha-input { flex: 1; }
-        .captcha-btn { width: 120px; height: 50px; background: #F8F9FA; border: 1px solid #EEEEEE; border-radius: 8px; color: #2E8B57; font-size: 14px; cursor: pointer; }
-        .hidden { display: none; }
+        .form-container { width: 100%; padding: 0 30px; box-sizing: border-box; }
+        /* 优化表单切换动画 */
+        .hidden { display: none; opacity: 0; transform: translateY(10px); }
+        form { transition: all 0.3s ease; opacity: 1; transform: translateY(0); }
+        .description { color: #696969; text-align: center; font-size: 14px; font-weight: 400; margin-top: 8px; margin-bottom: 16px; line-height: 1.5; }
 
-        /* 响应式样式保持不变 */
-        @media (max-width: 767px) { .login-module { width: 80%; padding: 20px; } }
-        @media (min-width: 768px) and (max-width: 1199px) { .login-module { width: 60%; padding: 30px; } }
-        @media (min-width: 1200px) { .login-module { width: 400px; padding: 40px; } }
+        /* 优化登录模块的响应式布局 */
+        .login-module {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px; /* 优化最大宽度 */
+            margin: 0 auto;
+            padding: 30px;
+            backdrop-filter: blur(5px);
+        }
+        /*new 12.8*/ 
+        /* 1. 隐藏 Webkit 内核浏览器（Chrome、Safari 等）的默认眼睛图标 */
+input[type="password"]::-webkit-credentials-cramble-button {
+  display: none; /* 彻底隐藏图标 */
+  appearance: none; /* 额外清除浏览器默认样式，避免残留 */
+  -webkit-appearance: none;
+}
+
+/* 2. 隐藏 Edge、IE 浏览器的默认眼睛图标 + 清空按钮（防止多余叉号） */
+input[type="password"]::-ms-reveal {
+  display: none; /* 隐藏 Edge/IE 的眼睛图标 */
+}
+input[type="password"]::-ms-clear {
+  display: none; /* 隐藏 Edge/IE 的输入框清空叉号（可选，避免其他多余元素） */
+}
+
+/* 3. 可选：若图标仍残留，禁止点击事件（兜底方案） */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-webkit-credentials-cramble-button {
+  pointer-events: none; /* 即使图标没消失，也无法点击，不影响用户操作 */
+}
+/*new 12.8 end*/ 
+        /* 响应式调整 - 小屏幕优化 */
+        @media (max-width: 767px) {
+            .login-module {
+                padding: 24px 18px;
+                margin: 0 16px; /* 增加左右边距，避免贴边 */
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* 减小阴影强度 */
+            }
+            .form-container {
+                padding: 0 12px;
+            }
+            .input-group {
+                margin: 14px 0;
+            }
+            .input-field {
+                height: 48px; /* 减小输入框高度 */
+                font-size: 14px;
+            }
+            .btn {
+                height: 52px; /* 减小按钮高度 */
+                font-size: 15px;
+            }
+            .login-title {
+                padding: 16px 0;
+                font-size: 18px;
+            }
+            .description {
+                margin-bottom: 12px;
+                font-size: 13px;
+            }
+            .brand-container {
+                margin: 16px 0 0 0;
+            }
+        }
+
+        /* 平板/桌面端优化 */
+        @media (min-width: 768px) {
+            .login-module {
+                padding: 36px;
+                box-shadow: 0 10px 36px rgba(0, 0, 0, 0.12);
+            }
+            .form-container {
+                padding: 0 36px;
+            }
+        }
+
+        /* 修复忘记密码表单的标签对齐问题 */
+        .input-group > div[style="position: relative;"] {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -58,25 +143,22 @@
 
     <div class="login-container">
         <div class="login-module">
-            <h1 class="login-title">登录</h1>
-
-            <!-- 删除验证码登录选项卡 -->
-            <!-- 修改部分：移除验证码登录选项卡，只保留密码登录选项卡 -->
-            <div class="tab-container">
-                <div class="tab active" data-type="phone_pwd" style="width: 100px;">密码登录</div>
-            </div>
+            <h1 class="login-title" id="pageTitle">登录</h1>
 
             <div class="form-container">
+                <!-- 密码登录表单 -->
                 <form id="loginForm">
+                    <p class="description">输入账号密码，开启智能养护之旅</p>
+                    
                     <div class="input-group">
                         <label class="input-label">用户名/邮箱</label>
                         <input type="text" id="username" class="input-field" placeholder="请输入用户名或邮箱" required>
                     </div>
 
-                    <div class="input-group" id="passwordGroup">
+                    <div class="input-group">
                         <div style="position: relative;">
                             <label class="input-label">密码</label>
-                            <a href="#" class="forgot-password">忘记密码？</a>
+                            <a class="forgot-password" id="forgotPasswordLink">忘记密码？</a>
                         </div>
                         <div class="password-container">
                             <input type="password" id="password" class="input-field" placeholder="请输入密码" required>
@@ -86,11 +168,40 @@
                         </div>
                     </div>
 
-                    <!-- 删除验证码相关HTML -->
-                    <!-- 修改部分：移除验证码输入组 -->
+                    <button type="submit" class="btn btn-login" id="loginBtn">登录</button>
+                    <a href="register.html" class="btn btn-register">注册新账号</a>
+                </form>
 
-                    <button type="submit" class="btn btn-login" id="submitBtn">登录</button>
-                    <a href="register.html" class="btn btn-register">注册</a>
+                <!-- 忘记密码表单 -->
+                <form id="forgotPasswordForm" class="hidden">
+                    <p class="description">重置密码，重新开启智能养护之旅</p>
+                    
+                    <div class="input-group">
+                        <label class="input-label">邮箱</label>
+                        <input type="email" id="resetEmail" class="input-field" placeholder="请输入注册时使用的邮箱" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">新密码</label>
+                        <div class="password-container">
+                            <input type="password" id="newPassword" class="input-field" placeholder="8位以上，含字母和数字" required>
+                            <button type="button" id="showNewPwd" class="password-toggle">
+                                <i class="bi bi-eye-slash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">确认新密码</label>
+                        <div class="password-container">
+                            <input type="password" id="confirmNewPassword" class="input-field" placeholder="请再次输入新密码" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-reset" id="resetBtn">重置密码</button>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <a class="back-to-login" id="backToLoginLink">返回登录</a>
+                    </div>
                 </form>
 
                 <div class="brand-container">
@@ -108,12 +219,35 @@
     <script>
         // 配置 API 地址 (根据实际情况调整)
         const API_BASE_URL = 'http://127.0.0.1:8000/api/v1/auth';
+        
+        // 获取DOM元素
+        const pageTitle = document.getElementById('pageTitle');
+        const loginForm = document.getElementById('loginForm');
+        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        const backToLoginLink = document.getElementById('backToLoginLink');
 
-        // 删除选项卡切换逻辑
-        // 修改部分：移除选项卡切换相关代码，固定为密码登录模式
-        let loginType = 'phone_pwd'; // 固定为密码登录
+        // 点击"忘记密码？"链接切换到忘记密码表单
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // 切换到忘记密码表单
+            loginForm.classList.add('hidden');
+            forgotPasswordForm.classList.remove('hidden');
+            // 更新页面标题
+            pageTitle.textContent = '忘记密码';
+        });
 
-        // 密码显示切换
+        // 点击"返回登录"链接切换回登录表单
+        backToLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // 切换回登录表单
+            forgotPasswordForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            // 更新页面标题
+            pageTitle.textContent = '登录';
+        });
+
+        // 密码显示切换 - 登录表单
         const showPwdBtn = document.getElementById('showPwd');
         const passwordInput = document.getElementById('password');
         showPwdBtn.addEventListener('click', () => {
@@ -122,75 +256,151 @@
             showPwdBtn.innerHTML = type === 'password' ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
         });
 
+        // 密码显示切换 - 忘记密码表单
+        const showNewPwdBtn = document.getElementById('showNewPwd');
+        const newPasswordInput = document.getElementById('newPassword');
+        if (showNewPwdBtn) {
+            showNewPwdBtn.addEventListener('click', () => {
+                const type = newPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                newPasswordInput.setAttribute('type', type);
+                showNewPwdBtn.innerHTML = type === 'password' ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+            });
+        }
+
         // 登录逻辑
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
-            const submitBtn = document.getElementById('submitBtn');
+            const loginBtn = document.getElementById('loginBtn');
 
             // 1. 基础验证
             if (!username) { alert('请输入用户名或账号'); return; }
 
-            // 2. 密码登录逻辑 (连接后端)
-            if (loginType === 'phone_pwd') {
-                if (!password) { alert('请输入密码'); return; }
+            if (!password) { alert('请输入密码'); return; }
 
-                try {
-                    // UI 交互：禁用按钮防止重复提交
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = '登录中...';
+            try {
+                // UI 交互：禁用按钮防止重复提交
+                loginBtn.disabled = true;
+                loginBtn.textContent = '登录中...';
 
-                    // 发送 JSON 请求
-                    const response = await fetch(`${API_BASE_URL}/login`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            account: username,
-                            password: password
-                        })
-                    });
+                // 发送 JSON 请求
+                const response = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        account: username,
+                        password: password
+                    })
+                });
 
-                    const res = await response.json();
+                const res = await response.json();
 
-                    // 处理响应
-                    if (res.code === 200) {
-                        // 登录成功
-                        const tokenData = res.data;
+                // 处理响应
+                if (res.code === 200) {
+                    // 登录成功
+                    const tokenData = res.data;
 
-                        // 存储 Token 和用户信息
-                        localStorage.setItem('zhiwu_token', tokenData.access_token);
+                    // 存储 Token 和用户信息
+                    localStorage.setItem('zhiwu_token', tokenData.access_token);
 
-                        const userInfo = {
-                            id: tokenData.user_id,
-                            username: tokenData.username,
-                            nickname: tokenData.username
-                        };
-                        localStorage.setItem('zhiwu_user', JSON.stringify(userInfo));
+                    const userInfo = {
+                        id: tokenData.user_id,
+                        username: tokenData.username,
+                        nickname: tokenData.username
+                    };
+                    localStorage.setItem('zhiwu_user', JSON.stringify(userInfo));
 
-                        window.location.href = 'index.html';
-                    } else {
-                        alert(res.msg || '登录失败，请检查账号密码');
-                    }
-
-                } catch (error) {
-                    console.error('Login error:', error);
-                    alert('网络连接错误，请检查服务器是否启动');
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '登录';
+                    window.location.href = 'index.html';
+                } else {
+                    alert(res.msg || '登录失败，请检查账号密码');
                 }
 
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('网络连接错误，请检查服务器是否启动');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = '登录';
             }
-            // 删除验证码登录逻辑
-            // 修改部分：移除验证码登录相关代码
         });
 
-        // 删除验证码倒计时逻辑
-        // 修改部分：移除获取验证码按钮事件监听代码
+        // 忘记密码逻辑
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('resetEmail').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
+            const resetBtn = document.getElementById('resetBtn');
+
+            // 1. 基础验证
+            if (!email) { alert('请输入邮箱'); return; }
+            
+            // 邮箱格式验证
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('请输入有效的邮箱地址');
+                return;
+            }
+            
+            if (!newPassword) { alert('请输入新密码'); return; }
+            
+            if (newPassword.length < 6) {
+                alert('密码长度不能少于6位');
+                return;
+            }
+            
+            if (newPassword !== confirmNewPassword) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+
+            try {
+                // UI 交互：禁用按钮防止重复提交
+                resetBtn.disabled = true;
+                resetBtn.textContent = '重置中...';
+
+                // 发送重置密码请求
+                // 注意：这里的API地址需要根据你的后端实际接口调整
+                const response = await fetch(`${API_BASE_URL}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        new_password: newPassword,
+                        confirm_password: confirmNewPassword
+                    })
+                });
+
+                const res = await response.json();
+
+                // 处理响应
+                if (res.code === 200) {
+                    alert('密码重置成功！请使用新密码登录');
+                    // 重置表单
+                    document.getElementById('forgotPasswordForm').reset();
+                    // 切换回登录表单
+                    forgotPasswordForm.classList.add('hidden');
+                    loginForm.classList.remove('hidden');
+                    pageTitle.textContent = '登录';
+                } else {
+                    alert(res.msg || '密码重置失败，请稍后重试');
+                }
+
+            } catch (error) {
+                console.error('Reset password error:', error);
+                alert('网络连接错误，请检查服务器是否启动');
+            } finally {
+                resetBtn.disabled = false;
+                resetBtn.textContent = '重置密码';
+            }
+        });
     </script>
 </body>
 </html>
