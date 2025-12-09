@@ -6,6 +6,7 @@ from datetime import date
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.models.plant import Plant
+from app.models.diary import Diary
 from app.schemas.user import BaseResponse
 from app.schemas.user_center import (
     UserProfile,
@@ -161,7 +162,7 @@ async def change_password(
     if verify_password(password_change.newPassword, current_user.password):
         return BaseResponse(code=400, msg="新密码不能与原密码相同")
     
-    # 验证新密码格式（至少8位，包含字母和数字）
+    # 验证新密码格式（至少8位）
     if len(password_change.newPassword) < 8:
         return BaseResponse(code=400, msg="新密码长度不能少于8位")
 
@@ -213,15 +214,15 @@ async def delete_account(current_user: User = Depends(get_current_user)):
 async def get_user_stats(current_user: User = Depends(get_current_user)):
     """
     获取个人中心统计数据
-    - plantCount: 用户植物总数（未删除）
-    - diaryCount: 日记数量（目前暂无日记表，先返回0，后续可对接真实数据）
+    - plantCount: 用户植物总数
+    - diaryCount: 日记数量
     - careDays: 养护天数（按账号注册天数计算）
     """
     # 统计植物数量
     plant_count = await Plant.filter(user=current_user, is_deleted=False).count()
 
-    # 日记数量占位：暂无日记表，先返回0，后续接入日记模型时替换
-    diary_count = 0
+    # 日记数量
+    diary_count = await Diary.filter(user_id=current_user.id, is_deleted=False).count()
 
     # 养护天数：账号注册到今天的天数，至少为1
     if current_user.created_at:
