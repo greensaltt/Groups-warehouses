@@ -6,6 +6,10 @@
     <title>植悟 - AI养护助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Markdown 渲染库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-light.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -78,6 +82,112 @@
         .nav-icon {
             font-size: 20px;
             margin-bottom: 5px;
+        }
+        /* Markdown 样式 */
+        .markdown-content {
+            color: #333;
+            line-height: 1.6;
+        }
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3,
+        .markdown-content h4,
+        .markdown-content h5,
+        .markdown-content h6 {
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+            color: #1B5E20;
+        }
+        .markdown-content h1 {
+            font-size: 1.5em;
+            border-bottom: 2px solid #81C784;
+            padding-bottom: 0.3em;
+        }
+        .markdown-content h2 {
+            font-size: 1.3em;
+            border-bottom: 1px solid #C8E6C9;
+            padding-bottom: 0.3em;
+        }
+        .markdown-content h3 {
+            font-size: 1.1em;
+        }
+        .markdown-content p {
+            margin: 0.5em 0;
+        }
+        .markdown-content ul,
+        .markdown-content ol {
+            margin: 0.5em 0;
+            padding-left: 2em;
+        }
+        .markdown-content li {
+            margin: 0.25em 0;
+        }
+        .markdown-content code {
+            background-color: #F1F8E9;
+            color: #2E7D32;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9em;
+        }
+        .markdown-content pre {
+            background-color: #F1F8E9;
+            border: 1px solid #C8E6C9;
+            border-radius: 8px;
+            padding: 12px;
+            overflow-x: auto;
+            margin: 0.5em 0;
+        }
+        .markdown-content pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+        }
+        .markdown-content blockquote {
+            border-left: 4px solid #81C784;
+            padding-left: 1em;
+            margin-left: 0;
+            color: #666;
+            font-style: italic;
+        }
+        .markdown-content a {
+            color: #2E7D32;
+            text-decoration: underline;
+        }
+        .markdown-content a:hover {
+            color: #1B5E20;
+        }
+        .markdown-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0.5em 0;
+            border: 1px solid #C8E6C9;
+        }
+        .markdown-content th,
+        .markdown-content td {
+            border: 1px solid #C8E6C9;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .markdown-content th {
+            background-color: #E8F5E9;
+            font-weight: 600;
+            color: #1B5E20;
+        }
+        .markdown-content hr {
+            border: none;
+            border-top: 2px solid #C8E6C9;
+            margin: 1em 0;
+        }
+        .markdown-content strong {
+            color: #1B5E20;
+            font-weight: 600;
+        }
+        .markdown-content em {
+            color: #2E7D32;
+            font-style: italic;
         }
     </style>
 </head>
@@ -416,7 +526,7 @@
                 msgHtml = `
                     <div class="flex mb-6 justify-end">
                         <div class="chat-bubble-user">
-                            <p>${content}</p>
+                            <p>${escapeHtml(content)}</p>
                         </div>
                         <div class="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center ml-3 flex-shrink-0">
                             <i class="fas fa-user text-white"></i>
@@ -424,13 +534,15 @@
                     </div>
                 `;
             } else if (type === 'ai') {
+                // 使用 marked 渲染 Markdown
+                const markdownHtml = renderMarkdown(content);
                 msgHtml = `
                     <div class="flex mb-6">
                         <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                             <i class="fas fa-robot text-primary"></i>
                         </div>
                         <div class="chat-bubble-ai">
-                            <p class="text-gray-800">${content}</p>
+                            <div class="text-gray-800 markdown-content">${markdownHtml}</div>
                         </div>
                     </div>
                 `;
@@ -459,27 +571,45 @@
                 const loadingMsg = '小植正在思考中...';
                 addMessageToChat('ai', loadingMsg);
                 
-                const formData = new FormData();
-                formData.append('message', question);
+                // 构建请求体（使用 JSON 格式）
+                const payload = {
+                    message: question
+                };
                 if (currentConversationId) {
-                    formData.append('conversation_id', currentConversationId);
+                    payload.conversation_id = currentConversationId;
                 }
+                
+                console.log('发送请求到:', `${API_BASE_URL}/chat`, '数据:', payload);
 
                 const response = await fetch(`${API_BASE_URL}/chat`, {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 });
 
+                console.log('响应状态:', response.status, response.statusText);
+                
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || `HTTP错误! 状态码: ${response.status}`);
+                    let errorMsg = `HTTP错误! 状态码: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.detail || errorMsg;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        errorMsg = errorText || errorMsg;
+                    }
+                    throw new Error(errorMsg);
                 }
 
                 const data = await response.json();
+                console.log('API 响应数据:', data);
                 
                 if (data.success) {
                     // 更新对话ID
                     currentConversationId = data.conversation_id;
+                    console.log('对话 ID:', currentConversationId);
                     
                     // 移除加载消息，添加真实回复
                     removeLastAIMessage();
@@ -659,6 +789,57 @@
         // 获取用户添加的植物列表（与主应用数据同步）
         function getPlants() {
             return JSON.parse(localStorage.getItem('zhiwu_plants')) || [];
+        }
+
+        // Markdown 渲染函数
+        function renderMarkdown(text) {
+            // 配置 marked 选项
+            marked.setOptions({
+                breaks: true,
+                gfm: true,
+                pedantic: false,
+                sanitize: false,
+            });
+
+            // 渲染 Markdown 为 HTML
+            let html = marked.parse(text);
+
+            // 高亮代码块
+            const codeBlocks = html.match(/<pre><code[^>]*>([^<]+)<\/code><\/pre>/g);
+            if (codeBlocks) {
+                codeBlocks.forEach(block => {
+                    try {
+                        const code = block.replace(/<[^>]+>/g, '').trim();
+                        const language = block.match(/language-([^"'\s>]+)/);
+                        const lang = language ? language[1] : 'plaintext';
+                        
+                        let highlighted = code;
+                        if (hljs.getLanguage(lang)) {
+                            highlighted = hljs.highlight(code, { language: lang }).value;
+                        } else {
+                            highlighted = hljs.highlight(code, { language: 'plaintext' }).value;
+                        }
+                        
+                        html = html.replace(block, `<pre><code class="hljs language-${lang}">${highlighted}</code></pre>`);
+                    } catch (e) {
+                        console.warn('代码高亮失败:', e);
+                    }
+                });
+            }
+
+            return html;
+        }
+
+        // HTML 转义函数（保护用户输入）
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
     </script>
 </body>
