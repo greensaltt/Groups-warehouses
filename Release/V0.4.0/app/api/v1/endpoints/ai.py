@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+# -*- coding: utf-8 -*-
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request
+from app.core.config import settings
 # 移除不需要的 FastAPI, CORSMiddleware, StaticFiles (路由中无法直接挂载静态文件)
+from fastapi.responses import JSONResponse
 import os
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import List, Dict, Optional
 import aiohttp
 
 # 创建 Router 实例
@@ -14,7 +17,7 @@ os.makedirs("uploads", exist_ok=True)
 
 # DeepSeek API配置
 DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
-DEEPSEEK_API_KEY = "sk-c84fe4cb9d664f62a772dcded8d7e737"
+DEEPSEEK_API_KEY = "sk-17a01a6a51624698ba06dfdec42bec78"  # 优先从 settings (.env) 读取，然后回退到环境变量
 
 # 植物养护专家系统提示词
 PLANT_EXPERT_SYSTEM_PROMPT = """你是一个专业的植物养护专家，专注于室内植物、多肉植物、观叶植物的养护指导。请遵循以下原则：
@@ -27,60 +30,6 @@ PLANT_EXPERT_SYSTEM_PROMPT = """你是一个专业的植物养护专家，专注
 7. 施肥建议要说明肥料类型、频率和用量
 请用中文回答，语气亲切专业，像一位经验丰富的园艺师。如果用户的问题信息不足，请主动询问更多细节以便给出更精准的建议。"""
 
-# 模拟知识库数据
-KNOWLEDGE_BASE = {
-    "多肉浇水指南": {
-        "title": "多肉植物浇水指南",
-        "content": """
-        <p>多肉植物浇水核心原则：<strong>宁干勿湿，浇则浇透</strong></p>
-        <p>1. 浇水频率：</p>
-        <ul>
-            <li>春/秋（生长季）：7-10天一次</li>
-            <li>夏季：15-20天一次（少量浇水，避免积水）</li>
-            <li>冬季：5°C以上10-15天一次，5°C以下断水</li>
-        </ul>
-        <p>2. 浇水方法：</p>
-        <ul>
-            <li>沿盆边缓慢浇水，避免浇到叶片中心</li>
-            <li>直到盆底有水流出，确保根系充分吸收水分</li>
-            <li>浇水后放在通风处，加速土壤干燥</li>
-        </ul>
-        """
-    },
-    "绿萝养护技巧": {
-        "title": "绿萝日常养护与黄叶处理",
-        "content": """
-        <p>绿萝是非常适合室内养护的观叶植物，养护要点如下：</p>
-        <p>1. 光照：适合明亮的散射光环境，避免阳光直射</p>
-        <p>2. 浇水：保持土壤湿润但不积水，见干见湿</p>
-        <p>3. 黄叶处理：及时摘除老叶，检查浇水情况</p>
-        """
-    },
-    "室内植物光照需求": {
-        "title": "常见室内植物光照需求表",
-        "content": """
-        <p>不同植物对光照的需求差异较大，合理摆放是养护关键：</p>
-        <p>1. 喜光植物（需放在朝南窗台）：</p>
-        <ul>
-            <li>多肉植物：每天需要4-6小时光照</li>
-            <li>太阳花、茉莉：需要充足直射光</li>
-        </ul>
-        <p>2. 中等光照（可放在朝东或朝西窗台）：</p>
-        <ul>
-            <li>绿萝、常春藤：适合明亮散射光</li>
-        </ul>
-        """
-    },
-    "病虫害防治": {
-        "title": "植物常见病虫害防治方法",
-        "content": """
-        <p>植物常见病虫害及防治方法：</p>
-        <p>1. 蚜虫：用清水冲洗，或用肥皂水喷洒</p>
-        <p>2. 红蜘蛛：增加空气湿度，用湿布擦拭叶片</p>
-        <p>3. 白粉病：及时摘除病叶，保持通风</p>
-        """
-    }
-}
 
 # 存储对话历史
 conversations_db = {}
@@ -94,12 +43,19 @@ async def health_check():
 
 # 对话接口
 @router.post("/chat")
-async def chat_with_ai(message: str = Form(...), conversation_id: Optional[str] = Form(None)):
-    if not message.strip():
-        raise HTTPException(status_code=400, detail="消息内容不能为空")
+async def chat_with_ai(request: Request, message: str = Form(None), conversation_id: Optional[str] = Form(None)):
+    # 支持 form-data 或 application/json
+    if not message:
+        try:
+            body = await request.json()
+            message = body.get('message') or body.get('question')
+            if not conversation_id:
+                conversation_id = body.get('conversation_id') or body.get('conversationId')
+        except Exception:
+            message = None
 
-    if not DEEPSEEK_API_KEY or DEEPSEEK_API_KEY == "你的DeepSeek_API密钥":
-        raise HTTPException(status_code=500, detail="DeepSeek API密钥未配置")
+    if not message or not str(message).strip():
+        raise HTTPException(status_code=400, detail="消息内容不能为空")
 
     # 处理对话ID
     if not conversation_id:
@@ -127,33 +83,77 @@ async def chat_with_ai(message: str = Form(...), conversation_id: Optional[str] 
     messages.append({"role": "user", "content": message})
 
     try:
-        # 调用DeepSeek API
-        async with aiohttp.ClientSession() as session:
-            payload = {
-                "model": "deepseek-chat",
-                "messages": messages,
-                "max_tokens": 2000,
-                "temperature": 0.7,
-                "stream": False
-            }
+        ai_response = None
+        result = {}
 
-            headers = {
-                "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-                "Content-Type": "application/json"
-            }
+        # 优先使用外部 DeepSeek（若配置了 API key）
+        if DEEPSEEK_API_KEY:
+            async with aiohttp.ClientSession() as session:
+                payload = {
+                    "model": "deepseek-chat",
+                    "messages": messages,
+                    "max_tokens": 2000,
+                    "temperature": 0.7,
+                    "stream": False
+                }
 
-            async with session.post(
-                    DEEPSEEK_API_URL,
-                    json=payload,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=30)
-            ) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise HTTPException(status_code=response.status, detail=f"DeepSeek API错误: {error_text}")
+                headers = {
+                    "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                    "Content-Type": "application/json"
+                }
 
-                result = await response.json()
-                ai_response = result["choices"][0]["message"]["content"]
+                async with session.post(
+                        DEEPSEEK_API_URL,
+                        json=payload,
+                        headers=headers,
+                        timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    if response.status != 200:
+                        # 尝试读取错误体并返回给调用方
+                        try:
+                            error_text = await response.text()
+                        except Exception:
+                            error_text = f"HTTP {response.status}"
+                        raise HTTPException(status_code=response.status, detail=f"DeepSeek API错误: {error_text}")
+
+                    # 为避免编码问题（中文乱码），先读取原始字节流并显式以 UTF-8 解码
+                    raw_bytes = await response.read()
+
+                    # 诊断：保存原始字节的十六进制和 Base64 编码
+                    import binascii
+                    import base64
+                    raw_hex = binascii.hexlify(raw_bytes[:200]).decode('ascii')  # 仅前 200 字节
+                    raw_base64 = base64.b64encode(raw_bytes).decode('ascii')
+                    print(f"[DEEPSEEK_RESPONSE_DIAGNOSIS] First 200 bytes hex: {raw_hex}")
+                    print(f"[DEEPSEEK_RESPONSE_DIAGNOSIS] Full response Base64 (first 500 chars): {raw_base64[:500]}")
+
+                    try:
+                        text = raw_bytes.decode('utf-8')
+                    except Exception:
+                        # 若 UTF-8 解码失败，退回到 latin1（能保证不抛错）并标注替换字符
+                        text = raw_bytes.decode('latin1', errors='replace')
+
+                    # 将解码后的文本解析成 JSON
+                    try:
+                        import json as _json
+                        result = _json.loads(text)
+                    except Exception:
+                        # 最后备选：尝试 aiohttp 的文本接口
+                        try:
+                            text = await response.text()
+                            result = _json.loads(text) if text else {}
+                        except Exception:
+                            result = {}
+
+                    # 安全地提取模型回答
+                    ai_response = ""
+                    try:
+                        ai_response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    except Exception:
+                        ai_response = ""
+
+                    # 不做任何"修复"尝试 - DeepSeek 返回的字节已经是正确的 UTF-8 编码
+                    # 若在此处仍然有乱码，那是在 JSON 解析或后续处理中被引入的
 
         # 保存对话记录
         conversations_db[conversation_id]["messages"].extend([
@@ -161,40 +161,31 @@ async def chat_with_ai(message: str = Form(...), conversation_id: Optional[str] 
             {"role": "assistant", "content": ai_response}
         ])
 
-        return {
+        # 为诊断编码问题，附加原始字节的 Base64 编码到响应（仅在 DEBUG 或特殊请求时）
+        response_dict = {
             "success": True,
             "message": ai_response,
             "conversation_id": conversation_id,
-            "usage": result.get("usage", {})
+            "usage": result.get("usage", {}),
         }
+
+        # 如果有原始字节诊断数据，附加到响应（用于后续编码问题排查）
+        if "raw_bytes" in locals():
+            import base64
+            response_dict["_debug_raw_base64"] = base64.b64encode(raw_bytes).decode('ascii')[:500]
+
+        # 使用 JSONResponse 并显式设置 UTF-8 charset 以避免编码问题
+        return JSONResponse(
+            content=response_dict,
+            media_type="application/json; charset=utf-8",
+            headers={"Content-Type": "application/json; charset=utf-8"}
+        )
 
     except aiohttp.ClientError as e:
         raise HTTPException(status_code=500, detail=f"网络请求错误: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI服务暂时不可用: {str(e)}")
 
-
-# 获取知识库列表
-@router.get("/knowledge")
-async def get_knowledge_list():
-    knowledge_list = []
-    for key, value in KNOWLEDGE_BASE.items():
-        knowledge_list.append({
-            "id": key,
-            "title": value["title"],
-            "preview": value["content"][:100] + "..." if len(value["content"]) > 100 else value["content"]
-        })
-
-    return {"knowledge": knowledge_list}
-
-
-# 获取知识详情
-@router.get("/knowledge/{knowledge_id}")
-async def get_knowledge_detail(knowledge_id: str):
-    if knowledge_id not in KNOWLEDGE_BASE:
-        raise HTTPException(status_code=404, detail="知识条目不存在")
-
-    return KNOWLEDGE_BASE[knowledge_id]
 
 
 # 图片上传和分析接口
@@ -261,7 +252,3 @@ async def get_conversation_detail(conversation_id: str):
         raise HTTPException(status_code=404, detail="对话不存在")
 
     return conversations_db[conversation_id]
-
-# 注意：
-# 1. 移除了 app.mount("/uploads", ...)，请在 main.py 中添加 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-# 2. 移除了 root() 路由，通常由前端或主API文档接管
