@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from app.schemas.user import UserRegister, BaseResponse, UserLogin  # 移除了 UserLogin
+# 【修改 1】引入 ResetPasswordRequest
+from app.schemas.user import UserRegister, BaseResponse, UserLogin, ResetPasswordRequest
 from app.models.user import User
 from app.core.security import verify_password, get_password_hash, create_access_token
 
@@ -20,23 +21,22 @@ async def register(req: UserRegister):
         return BaseResponse(code=400, msg="该邮箱已被注册")
 
     # 3. 创建用户 (密码加密存储)
-    # 注意：id, created_at, updated_at, is_deleted 会自动处理
+    # 【修改 2】这里加入了 security_answer 字段的保存
     new_user = await User.create(
         username=req.username,
         email=req.email,
-        password=get_password_hash(req.password)
+        password=get_password_hash(req.password),
+        security_answer=req.security_answer  # 保存密保答案
     )
 
-    # 4. 注册成功，自动生成 Token 让用户免登直接进入? 或者要求重新登录
-    # 这里演示直接返回注册成功
     return BaseResponse(
         msg="注册成功",
         data={"user_id": new_user.id, "username": new_user.username}
     )
 
 
-@router.post("/login", response_model=BaseResponse)  # 你可以选择返回 BaseResponse 或直接返回 Token
-async def login(user_in: UserLogin):  # <--- 关键变化：接收 Pydantic 模型 (JSON)
+@router.post("/login", response_model=BaseResponse)
+async def login(user_in: UserLogin):
     """
     用户登录 (JSON 方式)
     """
@@ -47,14 +47,12 @@ async def login(user_in: UserLogin):  # <--- 关键变化：接收 Pydantic 模�
 
     # 2. 验证
     if not user or not verify_password(user_in.password, user.password):
-        # 返回业务错误码 (根据你的 BaseResponse 习惯)
         return BaseResponse(code=400, msg="账号或密码错误")
 
     # 3. 生成 Token
     access_token = create_access_token(subject=user.id)
 
     # 4. 返回结果
-    # 这里我们把 Token 包装在 BaseResponse 里，符合你最初的设计
     return BaseResponse(
         code=200,
         msg="登录成功",
@@ -65,3 +63,34 @@ async def login(user_in: UserLogin):  # <--- 关键变化：接收 Pydantic 模�
             "username": user.username
         }
     )
+
+
+# --------------------------
+# 【新增】重置密码接口
+# --------------------------
+@router.post("/reset-password", response_model=BaseResponse)
+async def reset_password(req: ResetPasswordRequest):
+    """
+    通过密保问题重置密码
+    """
+    # 1. 查找用户 (支持 用户名 或 邮箱)
+    user = await User.get_or_none(username=req.account)
+    if not user:
+        user = await User.get_or_none(email=req.account)
+
+    if not user:
+        return BaseResponse(code=400, msg="该账号不存在")
+
+    # 2. 检查用户是否设置了密保
+    if not user.security_answer:
+        return BaseResponse(code=400, msg="该账号未设置密保问题，无法自助找回")
+
+    # 3. 验证密保答案 (去除首尾空格后比较)
+    if user.security_answer.strip() != req.security_answer.strip():
+        return BaseResponse(code=400, msg="密保答案错误，验证失败")
+
+    # 4. 更新密码 (加密存储)
+    user.password = get_password_hash(req.new_password)
+    await user.save()
+
+    return BaseResponse(code=200, msg="密码重置成功，请使用新密码登录")

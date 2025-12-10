@@ -173,36 +173,43 @@ input[type="password"]::-webkit-credentials-cramble-button {
                 </form>
 
                 <!-- 忘记密码表单 -->
-                <form id="forgotPasswordForm" class="hidden">
-                    <p class="description">重置密码，重新开启智能养护之旅</p>
-                    
-                    <div class="input-group">
-                        <label class="input-label">邮箱</label>
-                        <input type="email" id="resetEmail" class="input-field" placeholder="请输入注册时使用的邮箱" required>
-                    </div>
+<form id="forgotPasswordForm" class="hidden">
+    <p class="description">回答密保问题，重新设置密码</p>
 
-                    <div class="input-group">
-                        <label class="input-label">新密码</label>
-                        <div class="password-container">
-                            <input type="password" id="newPassword" class="input-field" placeholder="8位以上，含字母和数字" required>
-                            <button type="button" id="showNewPwd" class="password-toggle">
-                                <i class="bi bi-eye-slash"></i>
-                            </button>
-                        </div>
-                    </div>
+    <!-- 修改1：改为输入账号 -->
+    <div class="input-group">
+        <label class="input-label">账号 (用户名/邮箱)</label>
+        <input type="text" id="resetAccount" class="input-field" placeholder="请输入您的用户名或邮箱" required>
+    </div>
 
-                    <div class="input-group">
-                        <label class="input-label">确认新密码</label>
-                        <div class="password-container">
-                            <input type="password" id="confirmNewPassword" class="input-field" placeholder="请再次输入新密码" required>
-                        </div>
-                    </div>
+    <!-- 修改2：新增密保问题显示与输入 -->
+    <div class="input-group">
+        <label class="input-label">密保问题：您最喜欢的植物是什么？</label>
+        <input type="text" id="securityAnswer" class="input-field" placeholder="请输入注册时填写的答案" required>
+    </div>
 
-                    <button type="submit" class="btn btn-reset" id="resetBtn">重置密码</button>
-                    <div style="text-align: center; margin-top: 10px;">
-                        <a class="back-to-login" id="backToLoginLink">返回登录</a>
-                    </div>
-                </form>
+    <div class="input-group">
+        <label class="input-label">新密码</label>
+        <div class="password-container">
+            <input type="password" id="newPassword" class="input-field" placeholder="8位以上，含字母和数字" required>
+            <button type="button" id="showNewPwd" class="password-toggle">
+                <i class="bi bi-eye-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label class="input-label">确认新密码</label>
+        <div class="password-container">
+            <input type="password" id="confirmNewPassword" class="input-field" placeholder="请再次输入新密码" required>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-reset" id="resetBtn">重置密码</button>
+    <div style="text-align: center; margin-top: 10px;">
+        <a class="back-to-login" id="backToLoginLink">返回登录</a>
+    </div>
+</form>
 
                 <div class="brand-container">
                     <div class="brand-icon">
@@ -328,79 +335,67 @@ input[type="password"]::-webkit-credentials-cramble-button {
             }
         });
 
-        // 忘记密码逻辑
-        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // 忘记密码逻辑 - 密保问题版
+document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-            const email = document.getElementById('resetEmail').value.trim();
-            const newPassword = document.getElementById('newPassword').value.trim();
-            const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
-            const resetBtn = document.getElementById('resetBtn');
+    const account = document.getElementById('resetAccount').value.trim();
+    const answer = document.getElementById('securityAnswer').value.trim();
+    const newPassword = document.getElementById('newPassword').value.trim();
+    const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
+    const resetBtn = document.getElementById('resetBtn');
 
-            // 1. 基础验证
-            if (!email) { alert('请输入邮箱'); return; }
-            
-            // 邮箱格式验证
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                alert('请输入有效的邮箱地址');
-                return;
-            }
-            
-            if (!newPassword) { alert('请输入新密码'); return; }
-            
-            if (newPassword.length < 6) {
-                alert('密码长度不能少于6位');
-                return;
-            }
-            
-            if (newPassword !== confirmNewPassword) {
-                alert('两次输入的密码不一致');
-                return;
-            }
+    // 1. 基础验证
+    if (!account) { alert('请输入账号'); return; }
+    if (!answer) { alert('请输入密保答案'); return; }
 
-            try {
-                // UI 交互：禁用按钮防止重复提交
-                resetBtn.disabled = true;
-                resetBtn.textContent = '重置中...';
+    if (!newPassword) { alert('请输入新密码'); return; }
+    if (newPassword.length < 6) {
+        alert('密码长度不能少于6位');
+        return;
+    }
 
-                // 发送重置密码请求
-                // 注意：这里的API地址需要根据你的后端实际接口调整
-                const response = await fetch(`${API_BASE_URL}/reset-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: email,
-                        new_password: newPassword,
-                        confirm_password: confirmNewPassword
-                    })
-                });
+    if (newPassword !== confirmNewPassword) {
+        alert('两次输入的密码不一致');
+        return;
+    }
 
-                const res = await response.json();
+    try {
+        resetBtn.disabled = true;
+        resetBtn.textContent = '验证并重置...';
 
-                // 处理响应
-                if (res.code === 200) {
-                    alert('密码重置成功！请使用新密码登录');
-                    // 重置表单
-                    document.getElementById('forgotPasswordForm').reset();
-                    // 切换回登录表单
-                    forgotPasswordForm.classList.add('hidden');
-                    loginForm.classList.remove('hidden');
-                    pageTitle.textContent = '登录';
-                } else {
-                    alert(res.msg || '密码重置失败，请稍后重试');
-                }
-
-            } catch (error) {
-                console.error('Reset password error:', error);
-                alert('网络连接错误，请检查服务器是否启动');
-            } finally {
-                resetBtn.disabled = false;
-                resetBtn.textContent = '重置密码';
-            }
+        const response = await fetch(`${API_BASE_URL}/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                account: account,
+                security_answer: answer,
+                new_password: newPassword
+            })
         });
+
+        const res = await response.json();
+
+        if (res.code === 200) {
+            alert('验证成功！密码已重置，请使用新密码登录');
+            document.getElementById('forgotPasswordForm').reset();
+            forgotPasswordForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            pageTitle.textContent = '登录';
+        } else {
+            alert(res.msg || '重置失败，账号不存在或密保答案错误');
+        }
+
+    } catch (error) {
+        console.error('Reset password error:', error);
+        alert('网络连接错误，请检查服务器是否启动');
+    } finally {
+        resetBtn.disabled = false;
+        resetBtn.textContent = '重置密码';
+    }
+});
     </script>
 </body>
 </html>

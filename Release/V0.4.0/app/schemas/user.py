@@ -13,6 +13,7 @@ class UserRegister(BaseModel):
     username: str
     email: EmailStr # 数据库要求Email非空，这里必须传
     password: str
+    security_answer: str
 
 # 登录请求参数
 class UserLogin(BaseModel):
@@ -27,3 +28,8 @@ class Token(BaseModel):
     user_id: int
     username: str
 
+# 新增重置密码请求参数
+class ResetPasswordRequest(BaseModel):
+    account: str         # 用户名或邮箱
+    security_answer: str # 密保答案
+    new_password: str    # 新密码

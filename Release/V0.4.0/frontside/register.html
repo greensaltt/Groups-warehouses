@@ -308,7 +308,13 @@
                     <!-- 邮箱 -->
                     <div class="input-group">
                         <label class="input-label">邮箱</label>
-                        <input type="email" id="regEmail" class="input-field" placeholder="请输入邮箱 (用于找回密码)" required>
+                        <input type="email" id="regEmail" class="input-field" placeholder="请输入邮箱" required>
+                    </div>
+
+                     <!-- 密保问题 -->
+                    <div class="input-group">
+                        <label class="input-label">密保问题：您最喜欢的植物是什么？</label>
+                        <input type="text" id="regSecurityAnswer" class="input-field" placeholder="用于找回密码，请牢记答案" required>
                     </div>
 
                     <!-- 密码 -->
@@ -369,6 +375,8 @@
             // 获取 DOM 元素
             const usernameInput = document.getElementById('regUsername');
             const emailInput = document.getElementById('regEmail');
+            // 【新增】获取密保输入框
+            const securityAnswerInput = document.getElementById('regSecurityAnswer');
             const passwordInput = document.getElementById('regPassword');
             const confirmInput = document.getElementById('confirmPassword');
             const btn = document.getElementById('submitBtn');
@@ -376,15 +384,22 @@
             // 获取值
             const username = usernameInput.value.trim();
             const email = emailInput.value.trim();
+            // 【新增】获取密保答案
+            const securityAnswer = securityAnswerInput.value.trim();
             const password = passwordInput.value.trim();
             const confirmPwd = confirmInput.value.trim();
 
             // 前端校验
+            if (!username) { alert('请输入用户名'); return; }
+            if (!email) { alert('请输入邮箱'); return; }
+            // 【新增】校验密保答案
+            if (!securityAnswer) { alert('请填写密保问题答案'); return; }
+
             if (password !== confirmPwd) {
                 alert('两次输入的密码不一致');
                 return;
             }
-            if (password.length < 6) { // 根据后端需求调整长度限制
+            if (password.length < 6) {
                 alert('密码长度不能少于6位');
                 return;
             }
@@ -401,31 +416,27 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    // 构造符合 Pydantic Schema: UserRegister 的 JSON
+                    // 【修改】构造 JSON，加入 security_answer
                     body: JSON.stringify({
                         username: username,
                         email: email,
-                        password: password
+                        password: password,
+                        security_answer: securityAnswer // 传给后端
                     })
                 });
 
                 // 解析响应
                 const result = await response.json();
 
-                // 逻辑判断 (你的后端返回的是 BaseResponse: {code, msg, data})
+                // 逻辑判断
                 if (response.ok && result.code === 200) {
-                    alert('注册成功！即将跳转到登录页面。');
-                    // 可选：跳转前清空表单
+                    alert('注册成功！请记住您的密保答案。即将跳转到登录页面。');
                     document.getElementById('registerForm').reset();
-                    // 跳转
                     setTimeout(() => {
                         window.location.href = 'login.html';
                     }, 1000);
                 } else {
-                    // 处理后端错误 (如：用户已存在)
-                    // 后端可能返回 422 (格式错误) 或 400 (业务错误)
                     const errorMsg = result.msg || result.detail || '注册失败，请稍后重试';
-                    // 如果 result.detail 是数组 (FastAPI 默认验证错误)，处理一下
                     if (typeof errorMsg === 'object') {
                         alert('输入格式有误，请检查');
                     } else {

@@ -36,5 +36,8 @@ class User(models.Model):
     # is_deleted tinyint 1 非空 默认0
     is_deleted = fields.BooleanField(default=False)
 
+    # 存储密保问题的答案
+    security_answer = fields.CharField(max_length=255, null=True, description="密保问题答案：您最喜欢的植物是什么？")
+
     class Meta:
         table = "users"  # 指定数据库表名
