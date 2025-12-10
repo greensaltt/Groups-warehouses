@@ -279,19 +279,33 @@
             }
 
             container.innerHTML = reminders.map(item => `
-                <div class="reminder-item" id="reminder-${item.plant_id}-${item.type}">
-                    <div class="flex items-center flex-1">
-                        <span class="mr-2 text-xl">${item.icon}</span>
-                        <div>
-                            <p class="font-medium text-gray-800">${item.message}</p>
-                            <span class="text-xs ${getUrgencyColor(item.urgency)}">
-                                ${item.type === 'water' ? '需浇水' : '需施肥'} · 逾期${item.days_overdue}天
+                <div class="reminder-item flex items-start py-3" id="reminder-${item.plant_id}-${item.type}">
+                    <!-- 左侧：内容区域 -->
+                    <div class="flex-1">
+                        <!-- 第一行：标准任务标题 (加粗，深色) -->
+                        <div class="flex items-center mb-1">
+                            <span class="text-base font-bold text-gray-800 mr-2">
+                                ${item.message}
+                            </span>
+                            <!-- 紧急程度标签 -->
+                            <span class="text-xs ${getUrgencyColor(item.urgency)} bg-white px-1.5 py-0.5 rounded border border-current opacity-80 scale-90 origin-left">
+                                ${item.type === 'water' ? '浇水' : '施肥'}
+                            </span>
+                        </div>
+
+                        <!-- 第二行：AI 拟人化提醒 (绿色/斜体/对话气泡感) -->
+                        <div class="bg-white/60 rounded-lg p-2 mt-1 text-sm text-[#3a633a] italic relative">
+                            <i class="bi bi-chat-quote-fill absolute -top-1 left-2 text-white text-xs opacity-0"></i>
+                            <span class="flex items-start gap-1">
+                                <i class="bi bi-robot text-xs mt-1 opacity-70"></i>
+                                <span>${item.ai_message}</span>
                             </span>
                         </div>
                     </div>
-                    <!-- 打卡按钮 -->
-                    <div class="check-toggle" onclick="completeTask(this, ${item.plant_id}, '${item.type}')">
-                        <i class="fas fa-check text-white text-sm"></i>
+
+                    <!-- 右侧：打卡按钮 (垂直居中) -->
+                    <div class="check-toggle group ml-3 mt-2" onclick="completeTask(this, ${item.plant_id}, '${item.type}')">
+                        <i class="fas fa-check text-gray-300 group-hover:text-green-500 transition-colors text-xs"></i>
                     </div>
                 </div>
             `).join('');
