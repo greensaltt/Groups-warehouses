@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date
+from fastapi import Form
 
 # --- 新增：用于返回植物详细信息的模型 ---
 class PlantOut(BaseModel):
@@ -8,6 +9,7 @@ class PlantOut(BaseModel):
     nickname: str
     species: str
     icon: str = "🌱"
+    plantAvatar_url: Optional[str] = None
     water_cycle: int
     fertilize_cycle: int
     last_watered: Optional[date] = None
@@ -17,15 +19,14 @@ class PlantOut(BaseModel):
     class Config:
         from_attributes = True
 
-# 单个提醒项结构
+    # 单个提醒项的结构
 class ReminderItem(BaseModel):
     plant_id: int
     plant_name: str
-    type: str  # 'water' or 'fertilize'
-    message: str     # <--- 标准标题，如 "绿萝明天需要浇水"
-    ai_message: str  # <--- 新增字段：AI 生成的趣味文案
+    type: str  # 'water' 或 'fertilize'
+    message: str
     days_overdue: int
-    urgency: str     # 'high', 'medium', 'low'
+    urgency: str # 'high', 'medium', 'low'
     due_date: str
     icon: str
 
@@ -47,3 +48,4 @@ class PlantCreate(BaseModel):
     fertilize_cycle: int = 30
     last_watered: Optional[str] = None # 接收字符串 "2023-10-01"
     last_fertilized: Optional[str] = None
+    plantAvatar_url: Optional[str] = None

@@ -15,6 +15,7 @@ class Plant(models.Model):
     nickname = fields.CharField(max_length=50, description="植物昵称")
     species = fields.CharField(max_length=50, description="品种")
     icon = fields.CharField(max_length=20, default="🌱", description="植物图标/Emoji")
+    plantAvatar_url = fields.CharField(max_length=255, null=True,default='plantAvatars/default_avatar.png')
 
     # 浇水相关
     last_watered = fields.DateField(null=True, description="上次浇水日期")

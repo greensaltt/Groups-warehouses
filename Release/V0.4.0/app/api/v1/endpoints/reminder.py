@@ -1,10 +1,13 @@
 # app/api/v1/endpoints/reminder.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,UploadFile, File
 from datetime import date, timedelta, datetime
 from typing import List, Optional
 import aiohttp
 import asyncio
 import json
+import os
+import uuid
+import shutil
 
 # 导入依赖
 from app.api.deps import get_current_user
@@ -32,6 +35,17 @@ DEEPSEEK_API_KEY = "sk-17a01a6a51624698ba06dfdec42bec78"
 # OpenWeatherMap 配置 (建议申请一个免费Key，或者使用代码下方的模拟模式)
 WEATHER_API_KEY = "d7aadb72af4007994d98593361db009b"
 WEATHER_BASE_URL = "http://api.openweathermap.org/data/2.5/weather"
+
+# 配置上传目录
+UPLOAD_DIR = "uploads"
+PLANT_AVATAR_DIR_NAME = "plantAvatars"
+# 完整物理路径: uploads/plantAvatars
+PLANT_AVATAR_FULL_DIR = os.path.join(UPLOAD_DIR, PLANT_AVATAR_DIR_NAME)
+# 默认头像路径 (相对 uploads)
+DEFAULT_PLANT_AVATAR = f"{PLANT_AVATAR_DIR_NAME}/default_avatar.png"
+
+# 确保目录存在
+os.makedirs(PLANT_AVATAR_FULL_DIR, exist_ok=True)
 
 # --- 辅助函数 ---
 
@@ -140,6 +154,16 @@ async def generate_smart_message(plant_name: str, action: str, days_overdue: int
     except Exception as e:
         print(f"AI 生成失败: {e}")
 
+def build_avatar_url(avatar_path: Optional[str]) -> str:
+    """
+    返回可访问的植物头像 URL。
+    假设 static 目录挂载在 /uploads 下。
+    """
+    path = avatar_path or DEFAULT_PLANT_AVATAR
+    if path.startswith("http"):
+        return path
+    # 统一格式，确保前端能访问到 (根据你的静态文件配置)
+    return f"/uploads/{path}"
 
 # --- 路由定义 ---
 
@@ -150,11 +174,67 @@ async def get_user_plants(current_user: User = Depends(get_current_user)):
     plant_data = [PlantOut.model_validate(p) for p in plants]
     return BaseResponse(code=200, msg="获取成功", data=plant_data)
 
+# ---------------------------------------------------------
+# 1. 独立上传接口 (使用 UploadFile)
+# 前端先调用这个接口上传图片，拿到返回的 url
+# ---------------------------------------------------------
+@router.post("/upload_avatar", response_model=BaseResponse)
+async def upload_plant_avatar(
+        file: UploadFile = File(...),
+        current_user: User = Depends(get_current_user)
+):
+    """
+    第一步：上传图片
+    Content-Type: multipart/form-data
+    返回: {"url": "plantAvatars/xxxx.jpg"}
+    """
+    # 检查文件类型
+    if not file.content_type.startswith('image/'):
+        return BaseResponse(code=400, msg="请上传图片文件")
 
+    # 检查文件大小 (需读取流)
+    # 注意：UploadFile 是流式上传，读取后指针会到末尾，如果需要保存需 seek(0) 或直接写入
+    # 这里简单判断不做严格大小限制，或者在 nginx 层做限制，Python 层做流拷贝
+
+    # 生成唯一文件名
+    file_ext = os.path.splitext(file.filename)[1] or ".jpg"
+    unique_name = f"plant_{uuid.uuid4().hex}{file_ext}"
+    file_save_path = os.path.join(PLANT_AVATAR_FULL_DIR, unique_name)
+
+    # 相对数据库路径
+    db_path = f"{PLANT_AVATAR_DIR_NAME}/{unique_name}"
+
+    try:
+        with open(file_save_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        return BaseResponse(
+            msg="图片上传成功",
+            data={"url": db_path}  # 返回给前端，前端下次请求带上这个
+        )
+    except Exception as e:
+        return BaseResponse(code=500, msg=f"上传失败: {str(e)}")
+
+
+# ---------------------------------------------------------
+# 2. 创建植物接口 (使用纯 JSON)
+# 前端将上一步拿到的 url 填入 plantAvatar_url 字段
+# ---------------------------------------------------------
 @router.post("/plants", response_model=BaseResponse)
-async def create_plant(plant_in: PlantCreate, current_user: User = Depends(get_current_user)):
-    """添加植物"""
-    # ... 日期转换逻辑保持不变 ...
+async def create_plant(
+        plant_in: PlantCreate,  # 直接接收 JSON Body
+        current_user: User = Depends(get_current_user)
+):
+    """
+    第二步：提交植物信息
+    Content-Type: application/json
+    Body: {
+        "nickname": "...",
+        "plantAvatar_url": "plantAvatars/xxxx.jpg" (来自第一步的返回值)
+    }
+    """
+
+    # 处理日期
     w_date = None
     if plant_in.last_watered:
         try:
@@ -169,18 +249,31 @@ async def create_plant(plant_in: PlantCreate, current_user: User = Depends(get_c
         except ValueError:
             pass
 
-    plant = await Plant.create(
-        user=current_user,
-        nickname=plant_in.nickname,
-        species=plant_in.species,
-        water_cycle=plant_in.water_cycle,
-        fertilize_cycle=plant_in.fertilize_cycle,
-        last_watered=w_date,
-        last_fertilized=f_date
+    # 使用前端传来的图片路径，如果没有则用默认
+    avatar_path = plant_in.plantAvatar_url or DEFAULT_PLANT_AVATAR
+
+    try:
+        plant = await Plant.create(
+            user=current_user,
+            nickname=plant_in.nickname,
+            species=plant_in.species,
+            water_cycle=plant_in.water_cycle,
+            fertilize_cycle=plant_in.fertilize_cycle,
+            last_watered=w_date,
+            last_fertilized=f_date,
+            plantAvatar_url=avatar_path
+        )
+    except Exception as e:
+        return BaseResponse(code=500, msg=f"创建植物失败: {str(e)}")
+
+    return BaseResponse(
+        msg="植物添加成功",
+        data={
+            "plant_id": plant.id,
+            "nickname": plant.nickname,
+            "plantAvatar_url": build_avatar_url(plant.plantAvatar_url)
+        }
     )
-    return BaseResponse(msg="植物添加成功", data={"plant_id": plant.id, "nickname": plant.nickname})
-
-
 # -------------------------------------------------------------
 # 核心修改：改造 get_reminders 接口，集成 AI 和 天气
 # -------------------------------------------------------------
