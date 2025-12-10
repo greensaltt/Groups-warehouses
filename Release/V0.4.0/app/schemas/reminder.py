@@ -17,14 +17,15 @@ class PlantOut(BaseModel):
     class Config:
         from_attributes = True
 
-    # 单个提醒项的结构
+# 单个提醒项结构
 class ReminderItem(BaseModel):
     plant_id: int
     plant_name: str
-    type: str  # 'water' 或 'fertilize'
-    message: str
+    type: str  # 'water' or 'fertilize'
+    message: str     # <--- 标准标题，如 "绿萝明天需要浇水"
+    ai_message: str  # <--- 新增字段：AI 生成的趣味文案
     days_overdue: int
-    urgency: str # 'high', 'medium', 'low'
+    urgency: str     # 'high', 'medium', 'low'
     due_date: str
     icon: str
 
