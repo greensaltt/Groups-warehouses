@@ -411,6 +411,9 @@
                 group.items.forEach(item => {
                     const tagClass = getTagClass(item.activityType);
                     const tagText = getTagText(item.activityType);
+                    
+                    // 添加天气中文转换
+                    const weatherText = getWeatherText(item.weather);
 
                     // 图片渲染
                     const imgsHtml = item.photos.map(src => `<img src="${src}" class="diary-img">`).join('');
@@ -426,7 +429,7 @@
                             </div>
                             <div class="diary-tags">
                                 ${item.activityType ? `<span class="tag ${tagClass}">${tagText}</span>` : ''}
-                                <span class="tag" style="background:#ddd;color:#555">${item.weather}</span>
+                                ${item.weather ? `<span class="tag" style="background:#ddd;color:#555">${weatherText}</span>` : ''}
                             </div>
                             <div class="diary-content">${item.content}</div>
                             ${imgsHtml ? `<div class="diary-imgs">${imgsHtml}</div>` : ''}
@@ -450,12 +453,38 @@
         // ---------------- 辅助函数 ----------------
 
         function getTagClass(type) {
-            const map = { 'watering': 'tag-water', 'fertilizing': 'tag-fertilize', 'pruning': 'tag-prune' };
+            const map = { 
+                'watering': 'tag-water', 
+                'fertilizing': 'tag-fertilize', 
+                'pruning': 'tag-prune',
+                'repotting': 'tag-repot',
+                'blooming': 'tag-bloom',
+                'pestControl': 'tag-pest'
+            };
             return map[type] || 'tag-repot';
         }
+        
         function getTagText(type) {
-            const map = { 'watering': '浇水', 'fertilizing': '施肥', 'pruning': '修剪' };
-            return map[type] || type || '日常';
+            const map = { 
+                'watering': '浇水', 
+                'fertilizing': '施肥', 
+                'pruning': '剪枝',
+                'repotting': '换盆',
+                'blooming': '开花',
+                'pestControl': '病虫害防治'
+            };
+            return map[type] || '日常记录';
+        }
+        
+        function getWeatherText(weather) {
+            const map = {
+                'sunny': '晴',
+                'cloudy': '多云',
+                'rainy': '雨',
+                'windy': '风',
+                'snowy': '雪'
+            };
+            return map[weather] || weather;
         }
 
         // ---------------- 模态框逻辑 ----------------
