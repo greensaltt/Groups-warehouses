@@ -311,6 +311,12 @@
                         <input type="email" id="regEmail" class="input-field" placeholder="请输入邮箱" required>
                     </div>
 
+                    <!-- 城市输入框 -->
+                    <div class="input-group">
+                        <label class="input-label">所在城市</label>
+                        <input type="text" id="regCity" class="input-field" placeholder="例如：北京 (用于提供当地天气养护建议)" required>
+                    </div>
+
                      <!-- 密保问题 -->
                     <div class="input-group">
                         <label class="input-label">密保问题：您最喜欢的植物是什么？</label>
@@ -375,7 +381,8 @@
             // 获取 DOM 元素
             const usernameInput = document.getElementById('regUsername');
             const emailInput = document.getElementById('regEmail');
-            // 【新增】获取密保输入框
+            const cityInput = document.getElementById('regCity');
+            // 获取密保输入框
             const securityAnswerInput = document.getElementById('regSecurityAnswer');
             const passwordInput = document.getElementById('regPassword');
             const confirmInput = document.getElementById('confirmPassword');
@@ -384,6 +391,7 @@
             // 获取值
             const username = usernameInput.value.trim();
             const email = emailInput.value.trim();
+            const city = cityInput.value.trim();
             // 【新增】获取密保答案
             const securityAnswer = securityAnswerInput.value.trim();
             const password = passwordInput.value.trim();
@@ -392,6 +400,7 @@
             // 前端校验
             if (!username) { alert('请输入用户名'); return; }
             if (!email) { alert('请输入邮箱'); return; }
+            if (!city) { alert('请输入所在城市'); return;}
             // 【新增】校验密保答案
             if (!securityAnswer) { alert('请填写密保问题答案'); return; }
 
@@ -421,7 +430,8 @@
                         username: username,
                         email: email,
                         password: password,
-                        security_answer: securityAnswer // 传给后端
+                        security_answer: securityAnswer,
+                        location_city: city // 传给后端
                     })
                 });
 

@@ -26,7 +26,8 @@ async def register(req: UserRegister):
         username=req.username,
         email=req.email,
         password=get_password_hash(req.password),
-        security_answer=req.security_answer  # 保存密保答案
+        security_answer=req.security_answer,  # 保存密保答案
+        location_city = req.location_city
     )
 
     return BaseResponse(

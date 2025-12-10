@@ -14,6 +14,7 @@ class UserRegister(BaseModel):
     email: EmailStr # 数据库要求Email非空，这里必须传
     password: str
     security_answer: str
+    location_city: Optional[str] = None
 
 # 登录请求参数
 class UserLogin(BaseModel):
