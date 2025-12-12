@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>植悟 - 首页</title>
-    <!-- <script src="./mock/indexMockData.js"></script> -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -23,121 +22,79 @@
         }
     </script>
 </head>
-<body class="bg-neutral min-h-screen">
+<body class="bg-neutral min-h-screen pb-20">
     <!-- 头部区域 -->
     <div class="header pt-6 pb-4 px-5">
         <div class="flex items-center">
-            <h1 class="text-2xl font-bold text-dark">我的花园</h1>
+            <h1 class="text-2xl font-bold text-dark flex items-end">
+                我的花园
+                <span id="welcomeUser" class="text-sm font-normal text-gray-500 ml-2 mb-1"></span>
+            </h1>
             <div class="decor-img ml-auto w-36 h-20 bg-[url('assets/images/太阳&植物.png')] bg-contain bg-no-repeat bg-right"></div>
         </div>
     </div>
 
-    <!-- 智慧提醒卡片 - 绿色背景 -->
-    <div class="reminder-card bg-[#5b8c5a] rounded-xl p-5 mx-5 mb-5">
-        <h2 class="text-white text-lg font-semibold mb-4">智慧提醒</h2>
-        <div id="reminderContent" class="space-y-3">
-            <!-- 提醒内容将通过JS动态生成 -->
+    <!-- 智慧提醒卡片 -->
+    <div class="reminder-card bg-[#5b8c5a] rounded-xl p-5 mx-5 mb-5 shadow-md relative overflow-hidden">
+        <div class="absolute -right-5 -top-5 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
+        <h2 class="text-white text-lg font-semibold mb-4 flex items-center">
+            <i class="bi bi-stars mr-2"></i>智慧提醒
+        </h2>
+        <div id="reminderContent" class="space-y-3 min-h-[50px]">
+            <!-- 加载状态 -->
+            <div class="text-white text-center opacity-80 py-2 text-sm">
+                <i class="fas fa-spinner fa-spin mr-1"></i> 正在生成智能建议...
+            </div>
         </div>
     </div>
 
     <!-- 植物列表 -->
-    <div class="plant-list grid grid-cols-2 gap-5 mx-5 mb-24">
+    <div class="px-5 mb-2 flex justify-between items-end">
+        <h3 class="font-bold text-gray-700">我的植物</h3>
+    </div>
+    <div class="plant-list grid grid-cols-2 gap-4 mx-5 mb-24">
         <!-- 植物卡片将通过JS动态生成 -->
     </div>
 
-    <!-- 添加按钮 - 跳转至my-plants.html -->
-    <button class="add-btn fixed bottom-20 right-5 w-14 h-14 rounded-full bg-[#4CAF50] text-white text-2xl flex items-center justify-center hover:bg-[#45a049] transition-colors shadow-lg" onclick="window.location.href='my-plants.html'">+</button>
+    <!-- 添加按钮 -->
+    <button class="add-btn fixed bottom-24 right-5 w-14 h-14 rounded-full bg-[#4CAF50] text-white text-3xl flex items-center justify-center hover:bg-[#45a049] transition-all shadow-lg active:scale-95 z-50" onclick="window.location.href='my-plants.html'">
+        <i class="bi bi-plus"></i>
+    </button>
 
     <!-- 导航栏 -->
-    <div class="nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <a href="index.html" class="nav-item active"><i class="fas fa-home nav-icon"></i>首页</a>
-        <a href="ai-assistant.html" class="nav-item"><i class="fas fa-comments nav-icon"></i>AI助手</a>
-        <a href="diary.html" class="nav-item"><i class="fas fa-seedling nav-icon"></i>日记</a>
-        <a href="profile.html" class="nav-item"><i class="fas fa-user nav-icon"></i>我的</a>
+    <div class="nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <div class="flex justify-around py-2">
+            <a href="index.html" class="nav-item active flex flex-col items-center text-[#2E8B57]">
+                <i class="bi bi-house-door-fill text-xl mb-1"></i>
+                <span class="text-xs">首页</span>
+            </a>
+            <a href="ai-assistant.html" class="nav-item flex flex-col items-center text-gray-400 hover:text-[#2E8B57] transition-colors">
+                <i class="bi bi-robot text-xl mb-1"></i>
+                <span class="text-xs">AI助手</span>
+            </a>
+            <a href="diary.html" class="nav-item flex flex-col items-center text-gray-400 hover:text-[#2E8B57] transition-colors">
+                <i class="bi bi-journal-album text-xl mb-1"></i>
+                <span class="text-xs">日记</span>
+            </a>
+            <a href="profile.html" class="nav-item flex flex-col items-center text-gray-400 hover:text-[#2E8B57] transition-colors">
+                <i class="bi bi-person text-xl mb-1"></i>
+                <span class="text-xs">我的</span>
+            </a>
+        </div>
     </div>
-
-    <style>
-        .nav {
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-        }
-        .nav-item {
-            text-decoration: none;
-            color: #666;
-            font-size: 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .nav-item.active {
-            color: #81c784;
-        }
-        .nav-icon {
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
-        .reminder-item {
-            background: #d1e7d0;
-            border-radius: 8px;
-            padding: 8px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .reminder-item p {
-            text-sm text-dark;
-        }
-        /* 调整勾选框样式为圆形开关 */
-        .check-toggle {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 1px solid #888;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .check-toggle.checked {
-            background: #4CAF50;
-            border-color: #4CAF50;
-            color: white;
-        }
-        .plant-card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 30px 0;
-            color: #666;
-        }
-        .empty-state i {
-            font-size: 40px;
-            margin-bottom: 10px;
-            color: #ccc;
-        }
-    </style>
 
     <script>
         // ============================================
         //  1. 配置与基础函数
         // ============================================
 
-        // 后端地址
         const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
         // 检查登录状态并获取 Token
         function getAuthHeaders() {
+            // 【修正1】这里改回 'token'，与 login.html 保持一致
             const token = localStorage.getItem('zhiwu_token');
             if (!token) {
-                // 没有 Token，重定向到登录页
                 window.location.href = 'login.html';
                 return null;
             }
@@ -147,20 +104,20 @@
             };
         }
 
-        // 通用请求函数
         async function request(endpoint, options = {}) {
             const headers = getAuthHeaders();
             if (!headers) return null;
 
             try {
+                // 【注意】如果你的后端 reminder 路由有前缀，请在这里调整
+                // 例如：如果 endpoint 是 /reminders/get_plants
                 const res = await fetch(`${API_BASE_URL}${endpoint}`, {
                     ...options,
                     headers: { ...headers, ...options.headers }
                 });
 
-                // 处理 Token 过期
                 if (res.status === 401) {
-                    localStorage.removeItem('zhiwu_token');
+                    localStorage.removeItem('token');
                     alert('登录已过期，请重新登录');
                     window.location.href = 'login.html';
                     return null;
@@ -177,54 +134,46 @@
         //  2. 核心业务逻辑
         // ============================================
 
-        // --- 加载植物列表 (核心修改) ---
+        // --- 加载植物列表 ---
         async function loadPlants() {
             const plantListEl = document.querySelector('.plant-list');
 
-            // 调用后端接口
+            // 【注意】请确保后端路由地址正确，这里假设是 /get_plants
             const res = await request('/get_plants');
 
-            // 如果请求失败或数据为空
             if (!res || !res.data || res.data.length === 0) {
                 renderEmptyState(plantListEl);
                 return;
             }
 
-            // 渲染列表
             renderPlantList(plantListEl, res.data);
-            return res.data; // 返回数据供可能的筛选使用
         }
 
-        // 渲染“暂无植物”状态
         function renderEmptyState(container) {
             container.innerHTML = `
-                <div class="empty-state col-span-2 flex flex-col items-center justify-center py-10 text-gray-400">
-                    <i class="bi bi-flower1" style="font-size: 40px; margin-bottom: 10px;"></i>
-                    <p>暂无植物，快去添加吧</p>
-                    <button class="mt-4 px-6 py-2 bg-[#8cb38a] text-white rounded-full text-sm hover:bg-[#7aa578] transition-colors" onclick="window.location.href='my-plants.html'">
-                        去添加
+                <div class="col-span-2 flex flex-col items-center justify-center py-10 text-gray-400 bg-white/50 rounded-xl border-2 border-dashed border-gray-200">
+                    <i class="bi bi-flower1 text-4xl mb-2 text-green-300"></i>
+                    <p class="text-sm">暂无植物</p>
+                    <button class="mt-3 px-6 py-2 bg-[#8cb38a] text-white rounded-full text-xs hover:bg-[#7aa578] transition-colors" onclick="window.location.href='my-plants.html'">
+                        去添加第一盆
                     </button>
                 </div>
             `;
         }
 
-        // 渲染植物卡片列表
         function renderPlantList(container, plants) {
             container.innerHTML = plants.map(plant => {
-                // --- 计算下次浇水时间逻辑 ---
-                let wateringText = "暂无记录";
+                // 计算浇水状态
+                let wateringText = "新植物";
+                let statusColor = "text-gray-500";
 
                 if (plant.last_watered) {
                     const lastDate = new Date(plant.last_watered);
                     const cycle = plant.water_cycle || 7;
-
-                    // 下次浇水日期 = 上次 + 周期
                     const nextDate = new Date(lastDate);
                     nextDate.setDate(lastDate.getDate() + cycle);
 
-                    // 计算差距天数
                     const today = new Date();
-                    // 重置时分秒，只比较日期
                     today.setHours(0,0,0,0);
                     nextDate.setHours(0,0,0,0);
 
@@ -232,191 +181,182 @@
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                     if (diffDays < 0) {
-                        wateringText = `<span class="text-red-500 font-bold">已逾期 ${Math.abs(diffDays)} 天</span>`;
+                        wateringText = `已逾期 ${Math.abs(diffDays)} 天`;
+                        statusColor = "text-red-500 font-bold";
                     } else if (diffDays === 0) {
-                        wateringText = `<span class="text-orange-500 font-bold">今天浇水</span>`;
+                        wateringText = `今天浇水`;
+                        statusColor = "text-orange-500 font-bold";
                     } else {
-                        wateringText = `距离下次浇水还有：${diffDays}天`;
+                        wateringText = `${diffDays}天后浇水`;
+                        statusColor = "text-green-600";
                     }
-                } else {
-                    wateringText = "新植物 (建议浇水)";
                 }
 
-                // 处理图片：如果后端没存图片URL，暂时用Emoji
-                // 你后续可以扩展后端存 imageUrl
-                const imgHtml = `
-                    <div class="w-full h-36 bg-green-50 rounded-lg mb-3 flex items-center justify-center text-6xl">
-                        ${plant.icon || '🌱'}
-                    </div>
-                `;
+                // --- 修改图片处理逻辑 ---
+                let mediaContent;
+                const BASE_IMG_URL = 'http://127.0.0.1:8000/uploads/';
+
+                if (plant.plantAvatar_url) {
+                    // 2. 处理路径拼接
+                    // 如果数据库里存的是完整 http 开头的链接，就直接用
+                    // 如果是相对路径 (如 plantAvatars/xxx.jpg)，就拼接上前缀
+                    let finalUrl = plant.plantAvatar_url;
+                    if (!finalUrl.startsWith('http')) {
+                        // 处理 Windows 可能产生的反斜杠问题
+                        finalUrl = BASE_IMG_URL + finalUrl.replace(/\\/g, '/');
+                    }
+
+                    mediaContent = `
+                        <img src="${finalUrl}"
+                             alt="${plant.nickname}"
+                             class="w-full h-32 object-cover rounded-lg mb-3 shadow-sm"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <!-- 图片加载失败时的备用显示 -->
+                        <div class="w-full h-32 bg-green-50 rounded-lg mb-3 items-center justify-center text-green-300 hidden">
+                            <i class="bi bi-image text-4xl"></i>
+                        </div>
+                    `;
+                } else {
+                    // 没有图片时的默认 Emoji
+                    const icon = plant.icon || '🌱';
+                    mediaContent = `
+                        <div class="w-full h-32 bg-gradient-to-br from-green-50 to-orange-50 rounded-lg mb-3 flex items-center justify-center text-5xl shadow-inner">
+                            ${icon}
+                        </div>
+                    `;
+                }
 
                 return `
-                    <div class="plant-card bg-white rounded-xl p-4 flex flex-col items-center shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="viewPlantDetail('${plant.id}')">
-                        ${imgHtml}
-                        <h3 class="text-base font-medium text-dark mb-1">${plant.nickname}</h3>
-                        <p class="text-xs text-gray-500 mb-2">${plant.species}</p>
-                        <p class="text-xs text-gray-600">${wateringText}</p>
+                    <div class="plant-card bg-white rounded-xl p-4 flex flex-col items-center shadow-sm hover:shadow-md transition-all cursor-pointer group" onclick="console.log('点击植物:${plant.id}')">
+                        <div class="w-full overflow-hidden rounded-lg">
+                            ${mediaContent}
+                        </div>
+                        <h3 class="text-sm font-bold text-dark mb-1 truncate w-full text-center mt-1">${plant.nickname}</h3>
+                        <p class="text-xs ${statusColor}">${wateringText}</p>
                     </div>
                 `;
             }).join('');
         }
 
-        // --- 加载智慧提醒 (保持之前的逻辑) ---
+        // --- 加载智慧提醒 ---
         async function loadReminders() {
             const container = document.getElementById('reminderContent');
-            const res = await request('/reminders');
+            const res = await request('/reminders'); // 确认后端路由
 
-            // 兼容 BaseResponse 结构 (res.data 可能是一个列表，或者包含 reminders 字段)
             const reminders = Array.isArray(res?.data) ? res.data : (res?.data?.reminders || []);
 
             if (reminders.length === 0) {
                 container.innerHTML = `
                     <div class="text-white text-center opacity-90 py-4 flex flex-col items-center">
-                        <i class="bi bi-check-circle text-2xl mb-2"></i>
-                        <p class="text-sm">太棒了，所有任务都已完成！</p>
+                        <i class="bi bi-emoji-smile text-3xl mb-2"></i>
+                        <p class="text-sm">今天没有任务，植物们都很健康！</p>
                     </div>`;
                 return;
             }
 
             container.innerHTML = reminders.map(item => `
-                <div class="reminder-item flex items-start py-3" id="reminder-${item.plant_id}-${item.type}">
+                <div class="reminder-item flex items-start py-3 bg-white/90 backdrop-blur-sm rounded-lg p-3 mb-2 shadow-sm border-l-4 ${getUrgencyBorder(item.urgency)}" id="reminder-${item.plant_id}-${item.type}">
                     <!-- 左侧：内容区域 -->
-                    <div class="flex-1">
-                        <!-- 第一行：标准任务标题 (加粗，深色) -->
-                        <div class="flex items-center mb-1">
-                            <span class="text-base font-bold text-gray-800 mr-2">
+                    <div class="flex-1 min-w-0">
+                        <!-- 标题行 -->
+                        <div class="flex items-center mb-1 flex-wrap gap-2">
+                            <span class="text-sm font-bold text-gray-800">
                                 ${item.message}
                             </span>
-                            <!-- 紧急程度标签 -->
-                            <span class="text-xs ${getUrgencyColor(item.urgency)} bg-white px-1.5 py-0.5 rounded border border-current opacity-80 scale-90 origin-left">
+                            <span class="text-[10px] px-1.5 py-0.5 rounded border ${getUrgencyBadge(item.urgency)}">
                                 ${item.type === 'water' ? '浇水' : '施肥'}
                             </span>
                         </div>
 
-                        <!-- 第二行：AI 拟人化提醒 (绿色/斜体/对话气泡感) -->
-                        <div class="bg-white/60 rounded-lg p-2 mt-1 text-sm text-[#3a633a] italic relative">
-                            <i class="bi bi-chat-quote-fill absolute -top-1 left-2 text-white text-xs opacity-0"></i>
-                            <span class="flex items-start gap-1">
-                                <i class="bi bi-robot text-xs mt-1 opacity-70"></i>
-                                <span>${item.ai_message}</span>
-                            </span>
+                        <!-- AI 拟人化文案 -->
+                        <div class="bg-green-50/80 rounded p-2 mt-1 relative">
+                            <div class="flex gap-2">
+                                <div class="mt-0.5"><i class="bi bi-robot text-[#3a633a] text-xs"></i></div>
+                                <p class="text-xs text-[#3a633a] italic leading-relaxed">
+                                    "${item.ai_message || '主人，别忘了我哦~'}"
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- 右侧：打卡按钮 (垂直居中) -->
-                    <div class="check-toggle group ml-3 mt-2" onclick="completeTask(this, ${item.plant_id}, '${item.type}')">
-                        <i class="fas fa-check text-gray-300 group-hover:text-green-500 transition-colors text-xs"></i>
+                    <!-- 右侧：打卡按钮 -->
+                    <div class="check-toggle group ml-3 mt-1 w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center cursor-pointer hover:border-green-500 hover:bg-green-500 transition-all flex-shrink-0" onclick="completeTask(this, ${item.plant_id}, '${item.type}')">
+                        <i class="fas fa-check text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"></i>
                     </div>
                 </div>
             `).join('');
         }
 
-        function getUrgencyColor(urgency) {
-            if (urgency === 'high') return 'text-red-500 font-bold';
-            if (urgency === 'medium') return 'text-orange-500';
-            return 'text-green-600';
+        function getUrgencyBorder(urgency) {
+            if (urgency === 'high') return 'border-red-400';
+            if (urgency === 'medium') return 'border-orange-400';
+            return 'border-green-400';
+        }
+
+        function getUrgencyBadge(urgency) {
+            if (urgency === 'high') return 'bg-red-50 text-red-600 border-red-200';
+            if (urgency === 'medium') return 'bg-orange-50 text-orange-600 border-orange-200';
+            return 'bg-green-50 text-green-600 border-green-200';
         }
 
         // --- 完成打卡 ---
         async function completeTask(btnElement, plantId, type) {
-            if (btnElement.classList.contains('checked')) return;
+            if (btnElement.classList.contains('bg-green-500')) return;
 
+            // 乐观 UI 更新
+            btnElement.classList.add('bg-green-500', 'border-green-500');
+            btnElement.querySelector('i').classList.remove('opacity-0');
+
+            // 请求后端
             const res = await request(`/plants/${plantId}/${type}`, { method: 'POST' });
 
             if (res && res.code === 200) {
-                btnElement.classList.add('checked');
-                // 动画效果
+                // 成功：移除卡片动画
                 setTimeout(() => {
                     const row = document.getElementById(`reminder-${plantId}-${type}`);
                     if (row) {
+                        row.style.transition = 'all 0.5s';
                         row.style.opacity = '0';
-                        row.style.transform = 'translateX(20px)';
-                        // 刷新数据：提醒消失，植物列表里的时间也要更新
+                        row.style.transform = 'translateX(50px)';
+                        // 刷新数据
                         setTimeout(() => {
-                            loadReminders();
-                            loadPlants();
+                            loadReminders(); // 刷新智慧提醒区
+                            loadPlants();    // 刷新植物列表的时间状态
                         }, 500);
                     }
-                }, 500);
+                }, 300);
             } else {
+                // 失败：回滚状态
+                btnElement.classList.remove('bg-green-500', 'border-green-500');
+                btnElement.querySelector('i').classList.add('opacity-0');
                 alert(res?.msg || '操作失败');
             }
-        }
-
-        // --- 辅助功能 ---
-
-        // 查看详情 (跳转暂未实现，先打印)
-        function viewPlantDetail(plantId) {
-            // window.location.href = `plant-detail.html?id=${plantId}`;
-            console.log("查看植物详情ID:", plantId);
-        }
-
-        // 筛选逻辑 (前端筛选)
-        function filterByLocation(location, btn) {
-            // 这里仅仅是 UI 切换，因为后端还没加 Location 字段
-            // 你可以按照之前 my-plants.html 的逻辑后续完善后端
-            document.querySelectorAll('.location-buttons button').forEach(b => {
-                b.classList.remove('bg-[#7aa578]');
-                b.classList.add('bg-[#8cb38a]');
-            });
-            if(btn) { // 如果是点击触发
-                btn.classList.remove('bg-[#8cb38a]');
-                btn.classList.add('bg-[#7aa578]');
-            }
-            console.log("正在筛选:", location);
-            // 重新加载所有 (由于暂无location字段，不做实际过滤)
-            loadPlants();
-        }
-
-        // 初始化导航栏高亮
-        function initNav() {
-            const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-            const navLinks = document.querySelectorAll('.nav a');
-            navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                } else {
-                    link.classList.remove('active');
-                }
-            });
         }
 
         // ============================================
         //  3. 初始化入口
         // ============================================
         async function init() {
-            // 验证登录
             if (!getAuthHeaders()) return;
 
-            // 显示用户信息
-            const userStr = localStorage.getItem('zhiwu_user');
+            // 显示用户名
+            const userStr = localStorage.getItem('zhiwu_user'); // 这里可能是之前的逻辑存的
+            // 或者尝试从 localStorage 解析 token (JWT) 获取用户名，或者专门调一个 /me 接口
+            // 简单处理：如果 userStr 存在就用，不存在就显示默认
             if (userStr) {
                 try {
                     const user = JSON.parse(userStr);
-                    const welcomeEl = document.getElementById('welcomeUser');
-                    if(welcomeEl) welcomeEl.textContent = `Hi, ${user.username || '花友'}`;
+                    document.getElementById('welcomeUser').textContent = `Hi, ${user.username || '花友'}`;
                 } catch(e) {}
             }
 
-            // 显示日期
-            const today = new Date();
-            const dateStr = `${today.getMonth() + 1}月${today.getDate()}日`;
-            const headerTitle = document.querySelector('.header h1');
-            if (headerTitle) {
-                 // 保持原有标题，追加日期
-                 headerTitle.innerHTML = `我的花园 <span class="text-sm font-normal text-gray-500 ml-2">${dateStr}</span>`;
-            }
-
-            initNav();
-
-            // 并行加载数据
+            // 并行加载
             await Promise.all([
-                loadReminders(),
-                loadPlants()
+                loadPlants(),
+                loadReminders()
             ]);
         }
 
-        // 启动
         window.addEventListener('load', init);
     </script>
 </body>

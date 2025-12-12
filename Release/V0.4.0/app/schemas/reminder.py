@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import date
 from fastapi import Form
@@ -9,7 +9,8 @@ class PlantOut(BaseModel):
     nickname: str
     species: str
     icon: str = "🌱"
-    plantAvatar_url: Optional[str] = None
+    # 这样 Pydantic 会自动把数据库的 image_url 映射给 plantAvatar_url
+    plantAvatar_url: Optional[str]
     water_cycle: int
     fertilize_cycle: int
     last_watered: Optional[date] = None
@@ -25,6 +26,7 @@ class ReminderItem(BaseModel):
     plant_name: str
     type: str  # 'water' 或 'fertilize'
     message: str
+    ai_message: str
     days_overdue: int
     urgency: str # 'high', 'medium', 'low'
     due_date: str
