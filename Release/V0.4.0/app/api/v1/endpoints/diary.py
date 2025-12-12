@@ -1,6 +1,7 @@
 import base64
 import os
 import uuid
+import re
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends, Query
 from datetime import datetime, date as date_type
@@ -26,96 +27,150 @@ from app.schemas.diary import (
 
 router = APIRouter()
 
+
 # ==========================================
-# 天气服务（增强版：3小时缓存）
+# 天气服务（增强版：3小时缓存 + LLM城市翻译）
 # ==========================================
 class WeatherService:
-    """天气服务类，带3小时缓存"""
-    
+    """天气服务类，带3小时缓存和AI城市翻译"""
+
     def __init__(self):
-        self.api_key = os.getenv("OPENWEATHER_API_KEY", "d7aadb72af4007994d98593361db009b")
-        self.base_url = "https://api.openweathermap.org/data/2.5"
-        # 添加天气缓存：{city: (weather_data, timestamp)}
+        # 天气 API 配置
+        self.weather_api_key = os.getenv("OPENWEATHER_API_KEY", "d7aadb72af4007994d98593361db009b")
+        self.weather_base_url = "https://api.openweathermap.org/data/2.5"
+
+        # DeepSeek API 配置
+        self.llm_api_key = os.getenv("DEEPSEEK_API_KEY", "sk-17a01a6a51624698ba06dfdec42bec78")
+        self.llm_base_url = "https://api.deepseek.com/chat/completions"
+
+        # 缓存配置
+        # 天气缓存：{city: (weather_data, timestamp)}
         self.weather_cache = {}
-        self.cache_timeout = 3 * 3600  # 3小时（秒）
-    
+        self.cache_timeout =1*3600  # 3小时（秒）
+
+        # 城市翻译缓存：{中文城市名: 英文城市名}
+        # 城市名翻译通常不会变，可以持久缓存到内存
+        self.city_translation_cache = {}
+
     def _is_cache_valid(self, city: str) -> bool:
-        """检查缓存是否有效（3小时内）"""
+        """检查天气缓存是否有效（3小时内）"""
         if city not in self.weather_cache:
             return False
-        
+
         data, timestamp = self.weather_cache[city]
         current_time = datetime.now().timestamp()
-        
+
         return (current_time - timestamp) < self.cache_timeout
-    
+
+    def _has_chinese(self, string: str) -> bool:
+        """检查字符串是否包含中文"""
+        for ch in string:
+            if '\u4e00' <= ch <= '\u9fff':
+                return True
+        return False
+
+    async def _translate_city_llm(self, city_name: str) -> str:
+        """
+        使用 LLM 将中文城市名转换为英文/拼音
+        """
+        # 1. 检查本地翻译缓存
+        if city_name in self.city_translation_cache:
+            return self.city_translation_cache[city_name]
+
+        print(f"正在调用 LLM 翻译城市名: {city_name} ...")
+
+        # 2. 调用 LLM
+        system_prompt = (
+            "你是一个专业的地理翻译助手。请将用户输入的中文城市名称转换为用于 "
+            "OpenWeatherMap API 的标准英文名称（通常是拼音）。"
+            "要求：只返回英文名称，不要包含任何标点符号、解释或额外文本。"
+            "例如：输入'北京'，返回'Beijing'；输入'西安'，返回'Xian'。"
+        )
+
+        try:
+            async with httpx.AsyncClient() as client:
+                payload = {
+                    "model": "deepseek-chat",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": city_name}
+                    ],
+                    "temperature": 0.1,  # 低温度以保证准确性
+                    "max_tokens": 20
+                }
+                headers = {
+                    "Authorization": f"Bearer {self.llm_api_key}",
+                    "Content-Type": "application/json"
+                }
+
+                response = await client.post(self.llm_base_url, json=payload, headers=headers, timeout=10.0)
+
+                if response.status_code == 200:
+                    result = response.json()
+                    english_name = result["choices"][0]["message"]["content"].strip()
+                    # 清理可能产生的额外符号
+                    english_name = re.sub(r'[^\w\s]', '', english_name)
+
+                    # 3. 写入缓存
+                    self.city_translation_cache[city_name] = english_name
+                    print(f"LLM 翻译结果: {city_name} -> {english_name}")
+                    return english_name
+                else:
+                    print(f"LLM 翻译失败: {response.status_code} - {response.text}")
+                    return city_name  # 失败则返回原名尝试
+
+        except Exception as e:
+            print(f"LLM 调用异常: {e}")
+            return city_name
+
     async def get_current_weather(self, city: str = "北京") -> dict:
         """获取当前天气，使用3小时缓存"""
         try:
             # 如果城市为空或None，使用默认值"北京"
             if not city or city.strip() == "":
                 city = "北京"
-            
+
             # 检查缓存是否有效
             if self._is_cache_valid(city):
                 print(f"使用缓存天气数据：{city}")
                 data, _ = self.weather_cache[city]
                 return data
-            
+
             print(f"获取最新天气数据：{city}")
-            
-            # 中英文城市名映射
-            city_map = {
-                "北京": "Beijing", "上海": "Shanghai", "广州": "Guangzhou",
-                "深圳": "Shenzhen", "杭州": "Hangzhou", "成都": "Chengdu",
-                "南京": "Nanjing", "武汉": "Wuhan", "西安": "Xian",
-                "重庆": "Chongqing", "天津": "Tianjin", "福州": "Fuzhou",
-                "苏州": "Suzhou", "厦门": "Xiamen", "青岛": "Qingdao",
-                "长沙": "Changsha", "郑州": "Zhengzhou", "沈阳": "Shenyang",
-                "大连": "Dalian", "济南": "Jinan", "哈尔滨": "Harbin",
-                "长春": "Changchun", "石家庄": "Shijiazhuang", "太原": "Taiyuan",
-                "合肥": "Hefei", "南昌": "Nanchang", "南宁": "Nanning",
-                "昆明": "Kunming", "贵阳": "Guiyang", "兰州": "Lanzhou",
-                "西宁": "Xining", "银川": "Yinchuan", "乌鲁木齐": "Urumqi",
-                "拉萨": "Lhasa", "海口": "Haikou", "香港": "Hong Kong",
-                "澳门": "Macau", "台北": "Taipei"
-            }
-            
-            # 如果是中文城市名，转换为英文
-            if city in city_map:
-                api_city = city_map[city]
-            else:
-                api_city = city  # 默认使用输入的城市名
-            
-            url = f"{self.base_url}/weather"
+
+            # 处理城市名：如果是中文，调用 LLM 翻译
+            api_city = city
+            if self._has_chinese(city):
+                api_city = await self._translate_city_llm(city)
+
+            url = f"{self.weather_base_url}/weather"
             params = {
                 "q": api_city,
-                "appid": self.api_key,
+                "appid": self.weather_api_key,
                 "units": "metric",  # 摄氏度
-                "lang": "zh_cn"     # 中文
+                "lang": "zh_cn"  # 中文
             }
-            
+
             async with httpx.AsyncClient() as client:
                 response = await client.get(url, params=params, timeout=10.0)
-                
+
                 if response.status_code == 200:
                     data = response.json()
                     weather_data = self._parse_weather_data(data, city)
-                    
-                    # 更新缓存
+
+                    # 更新天气缓存
                     self.weather_cache[city] = (weather_data, datetime.now().timestamp())
-                    
                     return weather_data
                 else:
-                    print(f"天气API错误: {response.status_code}")
+                    print(f"天气API错误: {response.status_code}, 城市: {api_city}")
                     # 返回默认天气，不缓存
                     return self._get_default_weather(city)
-                    
+
         except Exception as e:
             print(f"获取天气失败: {e}")
             # 返回默认天气，不缓存
             return self._get_default_weather(city if city else "北京")
-    
+
     def _parse_weather_data(self, data: dict, original_city: str) -> dict:
         """解析天气数据"""
         # 天气描述映射为中文
@@ -124,15 +179,15 @@ class WeatherService:
             "Snow": "雪", "Thunderstorm": "雷雨", "Drizzle": "毛毛雨",
             "Mist": "雾", "Fog": "雾", "Haze": "霾", "Smoke": "烟霾"
         }
-        
+
         weather = data["weather"][0]
         main = data["main"]
         wind = data.get("wind", {})
-        
+
         # 获取中文描述
         weather_en = weather["main"]
         weather_desc = weather_map.get(weather_en, weather_en)
-        
+
         # 风向转换
         def get_wind_direction(deg):
             if deg is None:
@@ -140,7 +195,7 @@ class WeatherService:
             directions = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"]
             index = round((deg % 360) / 45) % 8
             return directions[index]
-        
+
         return {
             "city": original_city,
             "text": weather_desc,
@@ -153,7 +208,7 @@ class WeatherService:
             "icon": weather.get("icon", "01d"),
             "update_time": datetime.now().strftime("%H:%M")
         }
-    
+
     def _get_default_weather(self, city: str = "北京") -> dict:
         """获取默认天气数据"""
         return {
@@ -169,8 +224,10 @@ class WeatherService:
             "update_time": datetime.now().strftime("%H:%M")
         }
 
+
 # 创建天气服务实例
 weather_service = WeatherService()
+
 
 # ==========================================
 # 图片处理逻辑 (保存到 app/uploads/diary)
@@ -204,18 +261,12 @@ def save_base64_image(base64_str: str) -> str:
         current_file_path = Path(__file__).resolve()
 
         # 2. 向上回溯找到 app 目录
-        # diary.py 在: app/api/v1/endpoints/diary.py
-        # parents[0] = endpoints
-        # parents[1] = v1
-        # parents[2] = api
-        # parents[3] = app  <-- 我们要找这个目录
         app_dir = current_file_path.parents[3]
 
         # 3. 拼接目标路径: app/uploads/diary
         save_dir = app_dir / "uploads" / "diary"
 
         # 4. 创建目录 (如果不存在)
-        # parents=True 可以创建多级目录, exist_ok=True 忽略已存在错误
         save_dir.mkdir(parents=True, exist_ok=True)
 
         # 5. 生成文件路径
@@ -270,14 +321,13 @@ async def get_diaries(
     获取当前用户的日记列表
     """
     try:
-         # 从用户模型中获取 location_city，如果为空则使用默认值"北京"
+        # 从用户模型中获取 location_city，如果为空则使用默认值"北京"
         user_city = current_user.location_city
         if not user_city or user_city.strip() == "":
             user_city = "北京"  # 默认值
-        
+
         current_weather = await weather_service.get_current_weather(user_city)
 
-        
         query = Diary.filter(user_id=current_user.id, is_deleted=False)
 
         if plant_id and plant_id != "":
@@ -333,7 +383,7 @@ async def get_diaries(
 
 @router.get("/weather/current", response_model=BaseResponse)
 async def get_current_weather_api(
-    current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user)
 ):
     """
     获取当前用户所在城市的天气
@@ -346,10 +396,10 @@ async def get_current_weather_api(
         user_city = current_user.location_city
         if not user_city or user_city.strip() == "":
             user_city = "北京"
-        
+
         weather_data = await weather_service.get_current_weather(user_city)
         return BaseResponse(code=200, msg="获取成功", data=weather_data)
-        
+
     except Exception as e:
         print(f"天气接口异常: {e}")
         # 返回默认天气
@@ -429,13 +479,13 @@ async def create_diary(
         user_city = current_user.location_city
         if not user_city or user_city.strip() == "":
             user_city = "北京"
-        
+
         current_weather = await weather_service.get_current_weather(user_city)
-        
+
         # 4. 提取天气和温度
         weather_text = current_weather["text"]
         temperature = current_weather["temp"] + "°C"
-        
+
         # 5. 处理图片 (Base64 -> 文件)
         processed_photos = process_image_list(diary_in.photos)
 
@@ -526,7 +576,7 @@ async def update_diary(
             update_data["content"] = diary_update.content
         if diary_update.activityType is not None:
             update_data["activity_type"] = diary_update.activityType if diary_update.activityType != "" else None
-        
+
         # 注意：更新时不自动修改天气
         # 如果用户要修改天气，可以通过传入 weather 和 temperature 参数
         if diary_update.weather is not None:

@@ -115,21 +115,21 @@
             </div>
         </div>
 
-        <!-- 热门植物区域 (保持不变) -->
+        <!-- 热门植物区域 -->
         <div style="margin-top: 32px;">
             <h2 class="section-title">热门植物</h2>
             <div class="popular-plants" id="popularPlants">
                 <!-- 静态内容 -->
                 <div class="plant-card" data-plant="succulent" onclick="showPopularPlantDetail('succulent')">
-                    <img src="https://picsum.photos/seed/succulent/200/100" alt="多肉" class="popular-plant-img">
+                    <img src="https://images.unsplash.com/photo-1459156212016-c812468e2115?w=200" alt="多肉" class="popular-plant-img">
                     <div class="popular-plant-name">多肉</div>
                 </div>
                 <div class="plant-card" data-plant="pothos" onclick="showPopularPlantDetail('pothos')">
-                    <img src="https://picsum.photos/seed/pothos/200/100" alt="绿萝" class="popular-plant-img">
+                    <img src="https://images.unsplash.com/photo-1596720083162-841f3f982821?w=200" alt="绿萝" class="popular-plant-img">
                     <div class="popular-plant-name">绿萝</div>
                 </div>
                 <div class="plant-card" data-plant="rose" onclick="showPopularPlantDetail('rose')">
-                    <img src="https://picsum.photos/seed/rose/200/100" alt="玫瑰" class="popular-plant-img">
+                    <img src="https://images.unsplash.com/photo-1559563458-52c69c8e31e4?w=200" alt="玫瑰" class="popular-plant-img">
                     <div class="popular-plant-name">玫瑰</div>
                 </div>
             </div>
@@ -249,6 +249,8 @@
         //  后端 API 配置
         // ============================================
         const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+        // 1. 定义图片基础路径 (与 index.html 保持一致)
+        const BASE_IMG_URL = 'http://127.0.0.1:8000/uploads/';
 
         // 检查登录状态
         function getAuthHeaders(contentType = 'application/json') {
@@ -289,6 +291,7 @@
             if (!headers) return;
 
             try {
+                // 确认路由地址：/get_plants 或 /reminders/get_plants
                 const res = await fetch(`${API_BASE_URL}/get_plants`, { headers });
                 const data = await res.json();
 
@@ -305,45 +308,45 @@
         async function uploadAvatar() {
             const fileInput = document.getElementById('avatarFile');
             const file = fileInput.files[0];
-            
+
             if (!file) return;
-            
+
             // 验证文件类型
             if (!file.type.startsWith('image/')) {
                 showUploadStatus('请选择图片文件', 'error');
                 return;
             }
-            
+
             // 验证文件大小 (限制为5MB)
             if (file.size > 5 * 1024 * 1024) {
                 showUploadStatus('图片大小不能超过5MB', 'error');
                 return;
             }
-            
+
             // 显示上传预览
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('avatarPreview').src = e.target.result;
             };
             reader.readAsDataURL(file);
-            
+
             // 上传到服务器
             const formData = new FormData();
             formData.append('file', file);
-            
+
             const headers = getAuthHeaders(null); // FormData不需要Content-Type头部
-            
+
             showUploadStatus('正在上传... <div class="loading-spinner inline-block ml-2"></div>', '');
-            
+
             try {
                 const res = await fetch(`${API_BASE_URL}/upload_avatar`, {
                     method: 'POST',
                     headers: headers,
                     body: formData
                 });
-                
+
                 const data = await res.json();
-                
+
                 if (data.code === 200) {
                     uploadedAvatarUrl = data.data.url;
                     showUploadStatus('上传成功！', 'success');
@@ -404,7 +407,7 @@
             document.getElementById('avatarPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f0f9ff'/%3E%3Ctext x='50' y='60' font-size='36' text-anchor='middle' fill='%234CAF50'%3E🌱%3C/text%3E%3C/svg%3E";
             document.getElementById('uploadStatus').innerHTML = '';
             uploadedAvatarUrl = null;
-            
+
             // 重新设置默认日期
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('lastWatered').value = today;
@@ -436,10 +439,24 @@
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 const tip = diffDays > 0 ? `${diffDays}天后浇水` : `需立即浇水`;
 
-                // 如果有头像URL则使用，否则使用默认图标
-                let imgContent = '🌱';
+                // 2. 修改：渲染图片
+                let imgContent;
                 if (plant.plantAvatar_url) {
-                    imgContent = `<img src="${API_BASE_URL.replace('/api/v1', '')}${plant.plantAvatar_url}" alt="${plant.nickname}" class="plant-img">`;
+                    // 拼接完整 URL
+                    let finalUrl = plant.plantAvatar_url;
+                    if (!finalUrl.startsWith('http')) {
+                         finalUrl = BASE_IMG_URL + finalUrl;
+                    }
+
+                    imgContent = `
+                        <img src="${finalUrl}"
+                             alt="${plant.nickname}"
+                             class="plant-img"
+                             onerror="this.parentElement.innerHTML='<div class=\'plant-placeholder\'>🌱</div>'">
+                    `;
+                } else {
+                    // 默认占位符
+                    imgContent = `<div class="plant-placeholder">🌱</div>`;
                 }
 
                 return `
@@ -497,7 +514,7 @@
                 // 日期如果是空字符串，传 null 给后端
                 last_watered: lastWatered || null,
                 last_fertilized: lastFertilized || null,
-                
+
                 // 添加头像URL（如果已上传）
                 plantAvatar_url: uploadedAvatarUrl || null
             };
@@ -528,8 +545,8 @@
             resetAddForm();
             document.getElementById('addPlantModal').style.display = 'flex';
         }
-        
-        function hideAddPlantModal() { 
+
+        function hideAddPlantModal() {
             document.getElementById('addPlantModal').style.display = 'none';
         }
 
@@ -566,8 +583,8 @@
             `;
             document.getElementById('plantDetailModal').style.display = 'flex';
         }
-        
-        function hidePlantDetailModal() { 
+
+        function hidePlantDetailModal() {
             document.getElementById('plantDetailModal').style.display = 'none';
         }
 
@@ -584,8 +601,8 @@
             `;
             document.getElementById('popularPlantDetailModal').style.display = 'flex';
         }
-        
-        function hidePopularPlantDetailModal() { 
+
+        function hidePopularPlantDetailModal() {
             document.getElementById('popularPlantDetailModal').style.display = 'none';
         }
 

@@ -84,10 +84,32 @@ async def get_current_weather(city: str) -> str:
     if not city:
         return "未知天气"
 
+    city_map = {
+        "北京": "Beijing", "上海": "Shanghai", "广州": "Guangzhou",
+        "深圳": "Shenzhen", "杭州": "Hangzhou", "成都": "Chengdu",
+        "南京": "Nanjing", "武汉": "Wuhan", "西安": "Xian",
+        "重庆": "Chongqing", "天津": "Tianjin", "福州": "Fuzhou",
+        "苏州": "Suzhou", "厦门": "Xiamen", "青岛": "Qingdao",
+        "长沙": "Changsha", "郑州": "Zhengzhou", "沈阳": "Shenyang",
+        "大连": "Dalian", "济南": "Jinan", "哈尔滨": "Harbin",
+        "长春": "Changchun", "石家庄": "Shijiazhuang", "太原": "Taiyuan",
+        "合肥": "Hefei", "南昌": "Nanchang", "南宁": "Nanning",
+        "昆明": "Kunming", "贵阳": "Guiyang", "兰州": "Lanzhou",
+        "西宁": "Xining", "银川": "Yinchuan", "乌鲁木齐": "Urumqi",
+        "拉萨": "Lhasa", "海口": "Haikou", "香港": "Hong Kong",
+        "澳门": "Macau", "台北": "Taipei", "漳州":"Zhangzhou"
+    }
+
+    # 如果是中文城市名，转换为英文
+    if city in city_map:
+        api_city = city_map[city]
+    else:
+        api_city = city  # 默认使用输入的城市名
+
     try:
         async with aiohttp.ClientSession() as session:
             params = {
-                "q": city,
+                "q": api_city,
                 "appid": WEATHER_API_KEY,
                 "units": "metric",  # 摄氏度
                 "lang": "zh_cn"  # 中文返回
@@ -117,7 +139,7 @@ async def generate_smart_message(plant_name: str, action: str, days_overdue: int
     1. 使用第一人称“我”。
     2. 如果逾期天数很长（>7天），语气要委屈或生气。
     3. 如果逾期天数短（<3天），语气要可爱、期待。
-    4. 适当结合天气情况（例如：天热要多喝水，天冷要保暖），主要与浇水操作相关的时候可以进行结合。
+    4. 适当结合天气情况（包括气温等，例如：天热要多喝水，天冷要保暖）。
     5. 要拟人化、可爱，可以适当添加emoji。
     6. 可以根据植物的习性转化为性格，体现在提醒中，使得提醒具有个性。
     7. 如果遇到不认识的植物，可以不突出个性，只要可爱拟人即可。

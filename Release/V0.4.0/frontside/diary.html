@@ -189,7 +189,6 @@
     </div>
 
     <!-- 添加/编辑 弹窗 (复用同一个 Modal 结构) -->
-    <!-- 注意：为了简化代码，我将添加和编辑逻辑合并，通过 JS 控制 -->
     <div id="diaryModal" class="modal">
         <div class="modal-content">
             <div class="add-diary-header">
@@ -219,20 +218,24 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">今日天气</label>
-                    <select id="modalWeather" class="form-select">
-                        <option value="sunny">晴</option>
-                        <option value="cloudy">多云</option>
-                        <option value="rainy">雨</option>
-                        <option value="windy">风</option>
-                        <option value="snowy">雪</option>
-                    </select>
+                <!-- 自动天气提示 (添加模式显示) -->
+                <div id="autoWeatherTip" class="auto-weather-tip" style="display: none;">
+                    <i class="fas fa-cloud-sun" style="margin-right: 8px;"></i>
+                    <span>系统将自动记录当前城市的实时天气和温度</span>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">温度范围</label>
-                    <input type="text" id="modalTemperature" placeholder="例如：6°C-15°C" class="form-input">
+                <!-- 手动天气输入 (编辑模式显示) -->
+                <div id="manualWeatherInput" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">天气情况</label>
+                        <!-- 改为 text input 以适应后端的中文返回 -->
+                        <input type="text" id="modalWeather" class="form-input" placeholder="例如：晴">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">温度范围</label>
+                        <input type="text" id="modalTemperature" placeholder="例如：25°C" class="form-input">
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -256,48 +259,63 @@
     </div>
 
     <script>
-        // 配置 API 地址
-        const API_BASE = "http://127.0.0.1:8000/api/v1/diary";
+        // ============================================
+        //  1. 配置 API 地址
+        // ============================================
+        // 确保这两个地址与你的后端完全一致
+        const API_ROOT = "http://127.0.0.1:8000/api/v1";       // 用于 /get_plants
+        const API_BASE = "http://127.0.0.1:8000/api/v1/diary"; // 用于 /diaries
+        const BASE_IMG_URL = 'http://127.0.0.1:8000/uploads/'; // 图片基础路径
 
         // 全局变量
-        let userPlants = []; // 存储用户的植物列表
+        let userPlants = [];
         let currentFilter = { plantId: '', activityType: '' };
 
-        // 1. 权限检查
+        // 验证 Token
         const token = localStorage.getItem('zhiwu_token');
         if (!token) {
-            alert('请先登录');
+            console.warn("无Token，跳转登录");
             window.location.href = 'login.html';
         }
 
         // 2. 页面加载初始化
         window.addEventListener('load', async () => {
-            getWeatherData();     // 获取天气 (模拟)
-            await loadPlants();   // 加载植物列表 (API)
-            loadDiaries();        // 加载日记列表 (API)
-            bindEvents();         // 绑定事件
+            console.log("页面加载启动...");
+
+            // 串行执行，确保先拿到植物列表（为了图片），再拿日记
+            await loadPlants();
+            await loadDiaries();
+
+            getWeatherData();
+            bindEvents();
         });
 
         // ---------------- API 交互函数 ----------------
 
-        // 加载植物列表
+        // 加载植物列表 (用于获取头像)
         async function loadPlants() {
             try {
-                // 注意：这里假设你有一个获取用户植物列表的接口，或者通过 filter 接口获取
-                // 这里暂时用 get_diaries 接口返回的 plants 辅助数据，
-                // 或者你可以单独写一个 GET /api/v1/plants 接口
-                // 为了兼容你现在的 endpoints.diary.py 逻辑，我们先请求一次日记列表拿到植物数据
-                const response = await fetch(`${API_BASE}/diaries?limit=1`, {
+                console.log("正在请求植物列表: " + `${API_ROOT}/get_plants`);
+                const response = await fetch(`${API_ROOT}/get_plants`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
+                console.log("植物列表返回数据:", result);
 
                 if (result.code === 200) {
-                    userPlants = result.data.plants || []; // 使用后端返回的植物筛选列表
-                    renderPlantOptions(); // 渲染下拉框
+                    userPlants = result.data || [];
+                    console.log("已缓存植物数据:", userPlants); // 调试点：看这里有没有 plantAvatar_url
+                    renderPlantOptions();
+                } else {
+                    console.error("后端返回错误:", result.msg);
                 }
             } catch (error) {
-                console.error("加载植物失败", error);
+                console.error("加载植物列表失败:", error);
             }
         }
 
@@ -306,20 +324,25 @@
             const listContainer = document.getElementById('diaryList');
             const emptyTip = document.getElementById('emptyDiaryTip');
 
-            // 构建查询参数
             let query = `?skip=0&limit=100`;
             if (currentFilter.plantId) query += `&plant_id=${currentFilter.plantId}`;
             if (currentFilter.activityType) query += `&activity_type=${currentFilter.activityType}`;
 
             try {
+                console.log("正在请求日记列表: " + `${API_BASE}/diaries${query}`);
                 const response = await fetch(`${API_BASE}/diaries${query}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
+                console.log("日记列表返回数据:", result);
 
                 if (result.code === 200) {
                     const diaries = result.data.diaries;
-
                     if (diaries.length === 0) {
                         listContainer.innerHTML = '';
                         emptyTip.style.display = 'block';
@@ -327,138 +350,95 @@
                         emptyTip.style.display = 'none';
                         renderDiaryList(diaries);
                     }
-                }
-            } catch (error) {
-                console.error("加载日记失败", error);
-                alert("加载失败，请检查网络");
-            }
-        }
-
-        // 提交日记 (新建或更新)
-        async function submitDiary() {
-            const diaryId = document.getElementById('modalDiaryId').value;
-            const plantId = document.getElementById('modalPlantId').value;
-            const content = document.getElementById('modalContent').value;
-
-            if (!plantId) return alert("请选择植物");
-            if (!content) return alert("请填写内容");
-
-            // 收集图片
-            const photos = [];
-            // 直接获取 img 标签的 src
-            // 如果是新加的图片，src 是 Base64 字符串
-            // 如果是回显的旧图片，src 是 http://... URL
-            document.querySelectorAll('#modalPhotoContainer .preview-img img').forEach(img => {
-                photos.push(img.src);
-            });
-
-            const payload = {
-                plantId: plantId,
-                title: "日记", // 后端必填，给默认值
-                content: content,
-                activityType: document.getElementById('modalActivityType').value,
-                weather: document.getElementById('modalWeather').value,
-                temperature: document.getElementById('modalTemperature').value,
-                photos: photos,
-                date: new Date().toISOString().split('T')[0] // 今天
-            };
-
-            const url = diaryId ? `${API_BASE}/diaries/${diaryId}` : `${API_BASE}/diaries`;
-            const method = diaryId ? 'PUT' : 'POST';
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-
-                if (result.code === 200) {
-                    alert("保存成功！");
-                    hideDiaryModal();
-                    loadDiaries(); // 刷新列表
                 } else {
-                    alert(result.msg || "保存失败");
+                    alert("加载日记失败: " + result.msg);
                 }
             } catch (error) {
-                console.error("提交失败", error);
+                console.error("加载日记请求失败:", error);
+                alert("网络连接失败，请按F12查看控制台错误详情");
             }
         }
 
-        // 删除日记
-        async function deleteDiary(diaryId) {
-            if (!confirm("确定删除这条日记吗？")) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/diaries/${diaryId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    loadDiaries(); // 刷新
-                }
-            } catch (error) {
-                console.error("删除失败", error);
-            }
-        }
-
-        // ---------------- 渲染函数 ----------------
-
-        function renderPlantOptions() {
-            const filterSelect = document.getElementById('diaryPlantFilter');
-            const modalSelect = document.getElementById('modalPlantId');
-
-            // 清空旧选项
-            filterSelect.innerHTML = '<option value="">全部植物</option>';
-            modalSelect.innerHTML = '<option value="">请选择要记录的植物</option>';
-
-            userPlants.forEach(plant => {
-                const option = `<option value="${plant.id}">${plant.nickname}</option>`;
-                filterSelect.insertAdjacentHTML('beforeend', option);
-                modalSelect.insertAdjacentHTML('beforeend', option);
-            });
-        }
+        // ---------------- 渲染函数 (修复图片显示) ----------------
 
         function renderDiaryList(diaries) {
             const listContainer = document.getElementById('diaryList');
             listContainer.innerHTML = '';
 
-            // 按植物分组 (简单处理：如果后端未分组，前端手动分组展示)
-            // 这里为了简化，我们直接平铺展示，或者你可以保留原来的分组逻辑
-            // 为了保留你原来的 UI 风格，我们尝试简单的分组：
-
-            // 1. Group By Plant
             const groups = {};
+
             diaries.forEach(d => {
+                // 1. 初始化分组
                 if (!groups[d.plantId]) {
+                    let plantName = d.plantNickname || '未知植物';
+                    let plantAvatar = null;
+
+                    // 2. 核心调试：打印正在查找的ID
+                    // console.log(`正在查找 ID 为 ${d.plantId} 的植物头像...`);
+
+                    // 从缓存中查找植物
+                    const cachedPlant = userPlants.find(p => String(p.id) === String(d.plantId));
+
+                    if (cachedPlant) {
+                        plantName = cachedPlant.nickname;
+                        // 读取头像字段
+                        plantAvatar = cachedPlant.plantAvatar_url;
+                        // console.log(`找到植物 ${plantName}, 头像URL: ${plantAvatar}`);
+                    }
+
+                    // 3. 处理 URL 拼接 (修复反斜杠问题)
+                    if (plantAvatar) {
+                        // 如果是相对路径 (不以 http 开头)
+                        if (!plantAvatar.startsWith('http')) {
+                            // 替换 Windows 的反斜杠 \ 为 /
+                            const cleanPath = plantAvatar.replace(/\\/g, '/');
+                            plantAvatar = BASE_IMG_URL + cleanPath;
+                        }
+                    }
+
                     groups[d.plantId] = {
-                        plantName: d.plantNickname,
-                        plantImg: d.plantImageUrl || 'https://via.placeholder.com/80',
+                        plantName: plantName,
+                        plantImg: plantAvatar,
                         items: []
                     };
                 }
                 groups[d.plantId].items.push(d);
             });
 
-            // 2. Render Cards
+            // 渲染卡片
             Object.values(groups).forEach(group => {
                 const card = document.createElement('div');
                 card.className = 'plant-card';
+
+                // 4. 构建头像 HTML
+                let headerImgHtml;
+                if (group.plantImg) {
+                    headerImgHtml = `
+                        <img src="${group.plantImg}"
+                             class="plant-img"
+                             alt="${group.plantName}"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <div class="plant-emoji-placeholder" style="display:none">🌱</div>
+                    `;
+                } else {
+                    headerImgHtml = `<div class="plant-emoji-placeholder">🌱</div>`;
+                }
 
                 let itemsHtml = '';
                 group.items.forEach(item => {
                     const tagClass = getTagClass(item.activityType);
                     const tagText = getTagText(item.activityType);
-
-                    // 添加天气中文转换
                     const weatherText = getWeatherText(item.weather);
 
-                    // 图片渲染
-                    const imgsHtml = item.photos.map(src => `<img src="${src}" class="diary-img">`).join('');
+                    // 处理日记内容图片
+                    const imgsHtml = item.photos.map(src => {
+                        let photoUrl = src;
+                        if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+                             // 同样修复反斜杠
+                             photoUrl = BASE_IMG_URL + src.replace(/\\/g, '/');
+                        }
+                        return `<img src="${photoUrl}" class="diary-img">`;
+                    }).join('');
 
                     itemsHtml += `
                         <div class="diary-item">
@@ -481,7 +461,7 @@
 
                 card.innerHTML = `
                     <div class="plant-header">
-                        <img src="${group.plantImg}" class="plant-img">
+                        ${headerImgHtml}
                         <div>
                             <div class="plant-name">${group.plantName}</div>
                         </div>
@@ -492,57 +472,122 @@
             });
         }
 
+        // ---------------- 提交与删除 ----------------
+
+        async function submitDiary() {
+            const diaryId = document.getElementById('modalDiaryId').value;
+            const plantId = document.getElementById('modalPlantId').value;
+            const content = document.getElementById('modalContent').value;
+
+            if (!plantId) return alert("请选择植物");
+            if (!content) return alert("请填写内容");
+
+            const photos = [];
+            document.querySelectorAll('#modalPhotoContainer .preview-img img').forEach(img => {
+                photos.push(img.src);
+            });
+
+            const payload = {
+                plantId: plantId,
+                title: "日记",
+                content: content,
+                activityType: document.getElementById('modalActivityType').value,
+                photos: photos,
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            // 如果是编辑模式，带上用户输入的天气
+            // 如果是新建模式，后端会自动处理，不需要带
+            if (diaryId) {
+                payload.weather = document.getElementById('modalWeather').value;
+                payload.temperature = document.getElementById('modalTemperature').value;
+            }
+
+            const url = diaryId ? `${API_BASE}/diaries/${diaryId}` : `${API_BASE}/diaries`;
+            const method = diaryId ? 'PUT' : 'POST';
+
+            // UI 反馈
+            const btn = document.querySelector('.complete-btn');
+            const oldText = btn.innerText;
+            btn.innerText = "保存中...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                btn.innerText = oldText;
+                btn.disabled = false;
+
+                if (result.code === 200) {
+                    alert("保存成功！");
+                    hideDiaryModal();
+                    loadDiaries();
+                } else {
+                    alert(result.msg || "保存失败");
+                }
+            } catch (error) {
+                console.error("提交失败", error);
+                alert("提交失败，请检查网络");
+            }
+        }
+
+        async function deleteDiary(diaryId) {
+            if (!confirm("确定删除这条日记吗？")) return;
+            try {
+                const response = await fetch(`${API_BASE}/diaries/${diaryId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) loadDiaries();
+            } catch (error) {
+                console.error("删除失败", error);
+            }
+        }
+
         // ---------------- 辅助函数 ----------------
 
+        function renderPlantOptions() {
+            const filterSelect = document.getElementById('diaryPlantFilter');
+            const modalSelect = document.getElementById('modalPlantId');
+            filterSelect.innerHTML = '<option value="">全部植物</option>';
+            modalSelect.innerHTML = '<option value="">请选择要记录的植物</option>';
+
+            userPlants.forEach(plant => {
+                const option = `<option value="${plant.id}">${plant.nickname}</option>`;
+                filterSelect.insertAdjacentHTML('beforeend', option);
+                modalSelect.insertAdjacentHTML('beforeend', option);
+            });
+        }
+
         function getTagClass(type) {
-            const map = {
-                'watering': 'tag-water',
-                'fertilizing': 'tag-fertilize',
-                'pruning': 'tag-prune',
-                'repotting': 'tag-repot',
-                'blooming': 'tag-bloom',
-                'pestControl': 'tag-pest'
-            };
+            const map = { 'watering': 'tag-water', 'fertilizing': 'tag-fertilize', 'pruning': 'tag-prune', 'repotting': 'tag-repot', 'blooming': 'tag-bloom', 'pestControl': 'tag-pest' };
             return map[type] || 'tag-repot';
         }
-
         function getTagText(type) {
-            const map = {
-                'watering': '浇水',
-                'fertilizing': '施肥',
-                'pruning': '剪枝',
-                'repotting': '换盆',
-                'blooming': '开花',
-                'pestControl': '病虫害防治'
-            };
+            const map = { 'watering': '浇水', 'fertilizing': '施肥', 'pruning': '剪枝', 'repotting': '换盆', 'blooming': '开花', 'pestControl': '病虫害防治' };
             return map[type] || '日常记录';
         }
-
         function getWeatherText(weather) {
-            const map = {
-                'sunny': '晴',
-                'cloudy': '多云',
-                'rainy': '雨',
-                'windy': '风',
-                'snowy': '雪'
-            };
+            const map = { 'sunny': '晴', 'cloudy': '多云', 'rainy': '雨', 'windy': '风', 'snowy': '雪' };
             return map[weather] || weather;
         }
-
-        // ---------------- 模态框逻辑 ----------------
 
         function showAddDiaryModal() {
             document.getElementById('modalTitle').innerText = "添加日记";
             document.getElementById('modalDiaryId').value = "";
             document.getElementById('modalContent').value = "";
-            document.getElementById('modalPhotoContainer').innerHTML = `
-                <div class="photo-btn" id="modalAddPhotoBtn" onclick="triggerFileUpload()">
-                    <div class="photo-icon"></div><div class="photo-text">添加照片</div>
-                </div>`;
+            document.getElementById('modalPhotoContainer').innerHTML = `<div class="photo-btn" id="modalAddPhotoBtn" onclick="triggerFileUpload()"><div class="photo-icon"></div><div class="photo-text">添加照片</div></div>`;
             document.getElementById('diaryModal').classList.add('show');
         }
 
-        // 编辑回显
         async function showEditModal(diaryId) {
             try {
                 const response = await fetch(`${API_BASE}/diaries/${diaryId}`, {
@@ -557,35 +602,24 @@
                     document.getElementById('modalActivityType').value = d.activityType;
                     document.getElementById('modalContent').value = d.content;
                     document.getElementById('modalTemperature').value = d.temperature;
-
-                    // 回显图片
                     const container = document.getElementById('modalPhotoContainer');
                     container.innerHTML = `<div class="photo-btn" id="modalAddPhotoBtn" onclick="triggerFileUpload()"><div class="photo-icon"></div></div>`;
                     d.photos.forEach(src => addPhotoPreview(src));
-
                     document.getElementById('diaryModal').classList.add('show');
                 }
             } catch (e) { console.error(e); }
         }
 
-        function hideDiaryModal() {
-            document.getElementById('diaryModal').classList.remove('show');
-        }
+        function hideDiaryModal() { document.getElementById('diaryModal').classList.remove('show'); }
 
-        // 图片上传 (Base64 模拟)
         function triggerFileUpload() {
             const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
+            input.type = 'file'; input.accept = 'image/*';
             input.onchange = e => {
                 const file = e.target.files[0];
                 if (!file) return;
-
                 const reader = new FileReader();
-                reader.onload = res => {
-                    // res.target.result 就是那个很长的 Base64 字符串
-                    addPhotoPreview(res.target.result);
-                };
+                reader.onload = res => addPhotoPreview(res.target.result);
                 reader.readAsDataURL(file);
             };
             input.click();
@@ -598,14 +632,10 @@
             document.getElementById('modalPhotoContainer').insertBefore(div, document.getElementById('modalAddPhotoBtn'));
         }
 
-        // ---------------- 绑定事件 ----------------
         function bindEvents() {
-            // 筛选
             document.getElementById('diaryPlantFilter').addEventListener('change', e => {
-                currentFilter.plantId = e.target.value;
-                loadDiaries();
+                currentFilter.plantId = e.target.value; loadDiaries();
             });
-
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -614,96 +644,71 @@
                     loadDiaries();
                 });
             });
-
-            // 图片上传按钮绑定
             document.getElementById('modalAddPhotoBtn').onclick = triggerFileUpload;
         }
 
-        // 12.11天气接口
         async function getWeatherData() {
-        try {
-            const response = await fetch(`${API_BASE}/weather/current`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            try {
+                const response = await fetch(`${API_BASE}/weather/current`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
 
-            const result = await response.json();
+                const result = await response.json();
 
-            if (result.code === 200 && result.data) {
-                const weather = result.data;
-                updateWeatherUI(weather);
+                if (result.code === 200 && result.data) {
+                    updateWeatherUI(result.data);
+                } else {
+                    document.getElementById('weatherText').textContent = "未知";
+                    document.getElementById('weatherIcon').className = "fas fa-question-circle";
+                }
+            } catch (error) {
+                console.error("获取天气数据失败", error);
             }
-        } catch (error) {
-            console.error("获取天气数据失败", error);
-            // 保持现有默认显示
         }
-    }
 
-    // 12.11更新天气UI显示
-    // 更新天气UI显示（优化版）
-function updateWeatherUI(weather) {
-    // 更新天气文本
-    document.getElementById('weatherText').textContent = weather.text;
+        function updateWeatherUI(weather) {
+            const textEl = document.getElementById('weatherText');
+            const tempEl = document.getElementById('weatherTemperature');
+            const iconEl = document.getElementById('weatherIcon');
 
-    // 更新温度显示
-    document.getElementById('weatherTemperature').textContent = `${weather.temp}℃`;
+            textEl.textContent = weather.text;
+            tempEl.textContent = `${weather.temp}°C`;
+            if(weather.temp.includes('C') || weather.temp.includes('c')) {
+                 tempEl.textContent = weather.temp;
+            }
 
-    // 更新天气图标
-    const iconElement = document.getElementById('weatherIcon');
-    // 清空现有类和样式
-    iconElement.className = '';
-    iconElement.style = '';
+            // 图标与动画
+            iconEl.className = '';
+            iconEl.style = '';
+            iconEl.style.fontSize = '32px';
+            iconEl.style.transition = 'all 0.3s ease';
 
-    // 基础样式（统一设置）
-    iconElement.style.fontSize = '32px'; // 略微放大，更醒目
-    iconElement.style.transition = 'all 0.3s ease'; // 过渡动画，让效果更丝滑
-
-    // 根据天气类型设置图标、颜色和动态效果
-    switch(weather.text) {
-    case '晴':
-        iconElement.className = 'fas fa-sun weather-icon-animate'; // 保留fas前缀
-        iconElement.style.color = '#ffeb3b';
-        iconElement.style.textShadow = '0 0 10px rgba(255, 235, 59, 0.8)';
-        iconElement.style.animation = 'sunPulse 3s infinite ease-in-out';
-        break;
-    case '多云':
-        iconElement.className = 'fas fa-cloud weather-icon-animate'; // 用基础款cloud（beta3支持）
-        iconElement.style.color = '#f5f5f5';
-        iconElement.style.textShadow = '0 2px 4px rgba(0, 0, 0, 0.15)';
-        iconElement.style.animation = 'cloudFloat 6s infinite ease-in-out';
-        break;
-    case '雨':
-    case '毛毛雨':
-        iconElement.className = 'fas fa-cloud-rain weather-icon-animate';
-        iconElement.style.color = '#64b5f6';
-        iconElement.style.textShadow = '0 2px 6px rgba(100, 181, 246, 0.4)';
-        iconElement.style.animation = 'rainDrop 2s infinite linear';
-        break;
-    case '雪':
-        iconElement.className = 'fas fa-snowflake weather-icon-animate';
-        iconElement.style.color = '#e3f2fd';
-        iconElement.style.textShadow = '0 0 8px rgba(227, 242, 253, 0.9)';
-        iconElement.style.animation = 'snowSpin 4s infinite linear';
-        break;
-    case '雾':
-    case '霾':
-        iconElement.className = 'fas fa-smog weather-icon-animate';
-        iconElement.style.color = '#b0bec5';
-        iconElement.style.textShadow = '0 0 10px rgba(176, 190, 197, 0.6)';
-        iconElement.style.animation = 'fogFade 5s infinite ease-in-out';
-        break;
-    case '雷雨':
-        iconElement.className = 'fas fa-bolt weather-icon-animate'; // 用beta3支持的fa-bolt
-        iconElement.style.color = '#ffca28';
-        iconElement.style.textShadow = '0 0 12px rgba(255, 202, 40, 0.9)';
-        iconElement.style.animation = 'lightningFlash 1.5s infinite alternate';
-        break;
-    default:
-        iconElement.className = 'fas fa-sun weather-icon-animate';
-        iconElement.style.color = '#ffeb3b';
-        iconElement.style.textShadow = '0 0 10px rgba(255, 235, 59, 0.8)';
-        iconElement.style.animation = 'sunPulse 3s infinite ease-in-out';
-}
-}
+            // 根据中文天气描述匹配图标
+            const w = weather.text;
+            if (w.includes('晴')) {
+                iconEl.className = 'fas fa-sun weather-icon-animate';
+                iconElementStyle(iconEl, '#ffeb3b', 'sunPulse');
+            } else if (w.includes('多云') || w.includes('阴')) {
+                iconEl.className = 'fas fa-cloud weather-icon-animate';
+                iconElementStyle(iconEl, '#f5f5f5', 'cloudFloat');
+            } else if (w.includes('雨')) {
+                iconEl.className = 'fas fa-cloud-rain weather-icon-animate';
+                iconElementStyle(iconEl, '#64b5f6', 'rainDrop');
+            } else if (w.includes('雪')) {
+                iconEl.className = 'fas fa-snowflake weather-icon-animate';
+                iconElementStyle(iconEl, '#e3f2fd', 'snowSpin');
+            } else if (w.includes('雷')) {
+                iconEl.className = 'fas fa-bolt weather-icon-animate';
+                iconElementStyle(iconEl, '#ffca28', 'lightningFlash');
+            } else if (w.includes('雾') || w.includes('霾')) {
+                iconEl.className = 'fas fa-smog weather-icon-animate';
+                iconElementStyle(iconEl, '#b0bec5', 'fogFade');
+            } else {
+                // 默认
+                iconEl.className = 'fas fa-cloud-sun weather-icon-animate';
+                iconElementStyle(iconEl, '#fff', 'cloudFloat');
+            }
+        }
 
     </script>
 </body>
