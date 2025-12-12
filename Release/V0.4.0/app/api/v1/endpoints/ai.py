@@ -17,7 +17,7 @@ os.makedirs("uploads", exist_ok=True)
 
 # DeepSeek API配置
 DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
-DEEPSEEK_API_KEY = "sk-17a01a6a51624698ba06dfdec42bec78"  # 优先从 settings (.env) 读取，然后回退到环境变量
+DEEPSEEK_API_KEY = "sk-17a01a6a51624698ba06dfdec42bec78"
 
 # 植物养护专家系统提示词
 PLANT_EXPERT_SYSTEM_PROMPT = """你是一个专业的植物养护专家，专注于室内植物、多肉植物、观叶植物的养护指导。请遵循以下原则：

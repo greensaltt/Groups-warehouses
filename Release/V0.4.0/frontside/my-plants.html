@@ -169,11 +169,11 @@
                 <div class="form-group">
                     <label class="form-label">植物品种 <span class="required">*</span></label>
                     <select id="plantSpecies" required class="form-select">
-                        <option value="多肉">多肉植物</option>
-                        <option value="绿萝">绿萝</option>
-                        <option value="发财树">发财树</option>
-                        <option value="龟背竹">龟背竹</option>
-                        <option value="虎皮兰">虎皮兰</option>
+                        <option value="观叶植物">观叶植物（如绿萝、发财树、龟背竹等）</option>
+                        <option value="多肉植物">多肉植物（如仙人掌、芦荟等）</option>
+                        <option value="开花植物">开花植物（如白掌、紫罗兰、茉莉等）</option>
+                        <option value="棕榈/乔木类">棕榈/乔木类（如散尾葵、琴叶榕等）</option>
+                        <option value="藤蔓/垂吊植物">藤蔓/垂吊植物（如吊兰、绿萝、常春藤等）</option>
                         <option value="其他">其他品种</option>
                     </select>
                 </div>
@@ -606,15 +606,82 @@
             document.getElementById('popularPlantDetailModal').style.display = 'none';
         }
 
+        // 4. 获取 AI 养护建议
+        async function fetchAIRecommendation(species) {
+            if (!species || species === '其他') return;
+
+            const waterInput = document.getElementById('waterCycle');
+            const fertilizeInput = document.getElementById('fertilizeCycle');
+
+            // UI 交互：显示加载状态（比如变灰或者显示loading文字）
+            const originalWaterPlaceholder = waterInput.placeholder;
+            waterInput.value = '';
+            waterInput.placeholder = 'AI计算中...';
+            fertilizeInput.value = '';
+            fertilizeInput.placeholder = 'AI计算中...';
+
+            const headers = getAuthHeaders();
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/plants/recommend`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ species: species })
+                });
+                const data = await res.json();
+
+                if (data.code === 200) {
+                    // 自动填充，用户依然可以修改
+                    waterInput.value = data.data.water_cycle;
+                    fertilizeInput.value = data.data.fertilize_cycle;
+
+                    // 给一个小提示（可选）
+                    showUploadStatus(`AI已根据【${species}】为您推荐养护周期`, 'success');
+                }
+            } catch (err) {
+                console.error("获取推荐失败", err);
+                waterInput.value = 7; // 失败回退默认值
+                fertilizeInput.value = 30;
+            } finally {
+                waterInput.placeholder = originalWaterPlaceholder || '';
+                fertilizeInput.placeholder = '';
+            }
+        }
+
         function addThisPlant() {
             if(currentPopularPlant) {
                 // 设置默认昵称和品种
-                document.getElementById('plantSpecies').value = currentPopularPlant.name;
+                const speciesSelect = document.getElementById('plantSpecies');
+
+                // 检查下拉框里有没有这个品种，如果没有，暂时选“其他”或者手动添加option（这里简化处理，假设热门植物都在下拉框里，或者直接填入）
+                // 为了简单，我们假设热门植物名称能匹配下拉框的 value
+                speciesSelect.value = currentPopularPlant.name;
+
+                // 如果下拉框里没有这个值，speciesSelect.value 会是空。
+                // 这种情况下，我们可以把昵称填好，品种留给用户选，或者强制改为“其他”
+                if (!speciesSelect.value) {
+                     speciesSelect.value = '其他';
+                }
+
                 document.getElementById('plantNickname').value = currentPopularPlant.name + '01';
+
                 hidePopularPlantDetailModal();
                 showAddPlantModal();
+
+                // 自动触发一次推荐
+                if (speciesSelect.value !== '其他') {
+                    fetchAIRecommendation(speciesSelect.value);
+                }
             }
         }
+        // 监听品种变化，触发 AI 推荐
+        document.getElementById('plantSpecies').addEventListener('change', (e) => {
+            const species = e.target.value;
+            // 如果用户选了“其他”，或者是空，就不触发
+            if (species && species !== '其他') {
+                fetchAIRecommendation(species);
+            }
+        });
     </script>
 </body>
 </html>

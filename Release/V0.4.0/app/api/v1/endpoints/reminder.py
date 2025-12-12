@@ -1,13 +1,16 @@
 # app/api/v1/endpoints/reminder.py
+import json
+import re
 from fastapi import APIRouter, Depends, HTTPException,UploadFile, File
 from datetime import date, timedelta, datetime
+from pydantic import BaseModel
 from typing import List, Optional
 import aiohttp
 import asyncio
-import json
 import os
 import uuid
 import shutil
+import httpx
 
 # 导入依赖
 from app.api.deps import get_current_user
@@ -24,7 +27,8 @@ from app.schemas.reminder import (
     PlantCreate,
     PlantOut
 )
-
+class PlantRecommendationReq(BaseModel):
+    species: str
 router = APIRouter()
 
 # --- 配置 ---
@@ -78,33 +82,62 @@ def get_icon(operation_type: str, urgency: str) -> str:
     if urgency == "medium": return f"{base}⏰"
     return base
 
+
+async def translate_city_llm(city_name: str) -> str:
+    """
+    使用 LLM 将中文城市名转换为英文/拼音
+    """
+    print(f"正在调用 LLM 翻译城市名: {city_name} ...")
+
+    # 2. 调用 LLM
+    system_prompt = (
+        "你是一个专业的地理翻译助手。请将用户输入的中文城市名称转换为用于 "
+        "OpenWeatherMap API 的标准英文名称（通常是拼音）。"
+        "要求：只返回英文名称，不要包含任何标点符号、解释或额外文本。"
+        "例如：输入'北京'，返回'Beijing'；输入'西安'，返回'Xian'。"
+        "确保不要返回任何标点符号和其他文件，只要单纯返回城市英文名"
+    )
+
+    try:
+        async with httpx.AsyncClient() as client:
+            payload = {
+                "model": "deepseek-chat",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": city_name}
+                ],
+                "temperature": 0.1,  # 低温度以保证准确性
+                "max_tokens": 20
+            }
+            headers = {
+                "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json"
+            }
+
+            response = await client.post(DEEPSEEK_API_URL, json=payload, headers=headers, timeout=10.0)
+
+            if response.status_code == 200:
+                result = response.json()
+                english_name = result["choices"][0]["message"]["content"].strip()
+                # 清理可能产生的额外符号
+                english_name = re.sub(r'[^\w\s]', '', english_name)
+                print(f"LLM翻译城市名为：{english_name}")
+                return english_name
+            else:
+                print(f"LLM 翻译失败: {response.status_code} - {response.text}")
+                return city_name  # 失败则返回原名尝试
+
+    except Exception as e:
+        print(f"LLM 调用异常: {e}")
+        return city_name
+
 # --- 新增：天气获取函数 ---
 async def get_current_weather(city: str) -> str:
 
     if not city:
         return "未知天气"
 
-    city_map = {
-        "北京": "Beijing", "上海": "Shanghai", "广州": "Guangzhou",
-        "深圳": "Shenzhen", "杭州": "Hangzhou", "成都": "Chengdu",
-        "南京": "Nanjing", "武汉": "Wuhan", "西安": "Xian",
-        "重庆": "Chongqing", "天津": "Tianjin", "福州": "Fuzhou",
-        "苏州": "Suzhou", "厦门": "Xiamen", "青岛": "Qingdao",
-        "长沙": "Changsha", "郑州": "Zhengzhou", "沈阳": "Shenyang",
-        "大连": "Dalian", "济南": "Jinan", "哈尔滨": "Harbin",
-        "长春": "Changchun", "石家庄": "Shijiazhuang", "太原": "Taiyuan",
-        "合肥": "Hefei", "南昌": "Nanchang", "南宁": "Nanning",
-        "昆明": "Kunming", "贵阳": "Guiyang", "兰州": "Lanzhou",
-        "西宁": "Xining", "银川": "Yinchuan", "乌鲁木齐": "Urumqi",
-        "拉萨": "Lhasa", "海口": "Haikou", "香港": "Hong Kong",
-        "澳门": "Macau", "台北": "Taipei", "漳州":"Zhangzhou"
-    }
-
-    # 如果是中文城市名，转换为英文
-    if city in city_map:
-        api_city = city_map[city]
-    else:
-        api_city = city  # 默认使用输入的城市名
+    api_city = await translate_city_llm(city)
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -175,6 +208,55 @@ async def generate_smart_message(plant_name: str, action: str, days_overdue: int
                     return ai_text.replace('"', '').replace("'", "")
     except Exception as e:
         print(f"AI 生成失败: {e}")
+
+
+# --- 新增：AI 获取植物养护建议 ---
+async def get_plant_recommendation_from_ai(species: str) -> dict:
+    """
+    询问 AI 该植物的浇水和施肥周期
+    """
+    system_prompt = """
+    你是一个专业的植物养护专家。
+    请根据用户提供的植物品种，推荐合理的“浇水周期（天）”和“施肥周期（天）”。
+
+    要求：
+    1. 必须返回纯 JSON 格式。
+    2. JSON 格式必须包含两个字段：`water_cycle` (整数) 和 `fertilize_cycle` (整数)。
+    3. 不要包含任何 markdown 格式（如 ```json），只返回 JSON 字符串。
+    4. 如果植物品种不明确，给出一个保守的默认值（如浇水7天，施肥30天）。
+    """
+
+    user_prompt = f"植物种类：{species},植物"
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            payload = {
+                "model": "deepseek-chat",
+                "messages": messages,
+                "temperature": 0.5,  # 降低随机性，获取较稳定的建议
+                "max_tokens": 50
+            }
+            headers = {
+                "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            async with session.post(DEEPSEEK_API_URL, json=payload, headers=headers, timeout=10) as resp:
+                if resp.status == 200:
+                    result = await resp.json()
+                    content = result["choices"][0]["message"]["content"].strip()
+                    # 清理可能存在的 markdown 符号
+                    content = content.replace("```json", "").replace("```", "").strip()
+                    return json.loads(content)
+    except Exception as e:
+        print(f"AI 推荐失败: {e}")
+
+    # 失败时的默认值
+    return {"water_cycle": 7, "fertilize_cycle": 30}
 
 def build_avatar_url(avatar_path: Optional[str]) -> str:
     """
@@ -308,7 +390,7 @@ async def get_reminders(current_user: User = Depends(get_current_user)):
     today = date.today()
 
     # 1. 获取用户城市天气 (默认取 user 表中的 city，若无则默认 "Beijing")
-    user_city = current_user.location_city or "Hangzhou"
+    user_city = current_user.location_city or "北京"
     weather_info = await get_current_weather(user_city)
 
     reminders: List[ReminderItem] = []
@@ -414,4 +496,18 @@ async def record_fertilizing(plant_id: int, current_user: User = Depends(get_cur
     plant.last_fertilized = date.today()
     await plant.save()
     return BaseResponse(msg="施肥打卡成功", data=PlantOperationResponse(plant_id=plant.id, operation="fertilize",
-                                                                        operated_at=str(plant.last_fertilized)).dict())
+                                                                        operated_at=str(plant.last_fertilized)).model_dump())
+
+@router.post("/plants/recommend", response_model=BaseResponse)
+async def recommend_plant_cycles(
+        req: PlantRecommendationReq,
+        current_user: User = Depends(get_current_user)
+):
+    """
+    根据植物品种获取 AI 推荐的养护周期
+    """
+    if not req.species or req.species == "其他":
+        return BaseResponse(code=200, msg="默认值", data={"water_cycle": 7, "fertilize_cycle": 30})
+
+    recommendation = await get_plant_recommendation_from_ai(req.species)
+    return BaseResponse(code=200, msg="获取建议成功", data=recommendation)
